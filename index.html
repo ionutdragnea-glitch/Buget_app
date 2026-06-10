@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Buget">
+<meta name="theme-color" content="#0a0d12">
+<title>Buget</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+  :root{
+    --bg:#0a0d12;
+    --bg-2:#0f141c;
+    --card:#161c26;
+    --card-2:#1b222e;
+    --line:#232c3a;
+    --txt:#e8edf4;
+    --txt-dim:#8a97a8;
+    --txt-mute:#5c697a;
+    /* etichete pe cardurile colorate (verde/roșu/portocaliu) — alb estompat, lizibil */
+    --txt-card:rgba(232,237,244,.88);
+    --txt-card-soft:rgba(232,237,244,.72);
+    /* crem (ca tonul iconiței card 💳) — folosit la monedele cash */
+    --cream:#e9d8a6;
+    --accent:#ff7a3c;
+    --accent-soft:rgba(255,122,60,.14);
+    --green:#2fbf71;
+    --green-soft:rgba(47,191,113,.14);
+    --red:#ff5d5d;
+    --red-soft:rgba(255,93,93,.13);
+    --blue:#4aa8ff;
+    --radius:18px;
+    --safe-b:env(safe-area-inset-bottom,0px);
+    --safe-t:env(safe-area-inset-top,0px);
+    /* glassmorphism */
+    --glass:rgba(26,33,45,.55);
+    --glass-soft:rgba(255,255,255,.045);
+    --glass-brd:rgba(255,255,255,.09);
+    --glass-blur:blur(20px) saturate(150%);
+    --glass-hi:inset 0 1px 0 rgba(255,255,255,.10);
+    --glass-shadow:0 12px 34px -16px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(120% 60% at 50% -10%, #15202e 0%, var(--bg) 55%),
+      var(--bg);
+    color:var(--txt);
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+    user-select:none;
+  }
+  #app{
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    z-index:1;
+  }
+  /* ---------- Ambient glow (gives glass something to refract) ---------- */
+  .ambient{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .ambient i{position:absolute;border-radius:50%;filter:blur(64px);opacity:.55}
+  .ambient .o1{width:62vw;height:62vw;max-width:520px;max-height:520px;
+    background:radial-gradient(circle,rgba(255,122,60,.55),transparent 68%);
+    top:-14vh;right:-16vw;animation:drift1 20s ease-in-out infinite}
+  .ambient .o2{width:58vw;height:58vw;max-width:480px;max-height:480px;
+    background:radial-gradient(circle,rgba(74,168,255,.42),transparent 68%);
+    bottom:-10vh;left:-18vw;animation:drift2 26s ease-in-out infinite}
+  .ambient .o3{width:46vw;height:46vw;max-width:380px;max-height:380px;opacity:.5;
+    background:radial-gradient(circle,rgba(47,191,113,.14),transparent 72%);
+    top:38%;left:30%;animation:drift3 30s ease-in-out infinite}
+  @keyframes drift1{50%{transform:translate(-6vw,6vh) scale(1.12)}}
+  @keyframes drift2{50%{transform:translate(7vw,-5vh) scale(1.1)}}
+  @keyframes drift3{50%{transform:translate(-4vw,-7vh) scale(1.18)}}
+  @media (prefers-reduced-motion:reduce){.ambient i{animation:none}}
+  /* ---------- Header ---------- */
+  header{
+    padding:calc(var(--safe-t) + 18px) 20px 14px;
+    flex:0 0 auto;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+  }
+  .reset-btn{
+    display:flex;align-items:center;gap:6px;flex:0 0 auto;
+    background:linear-gradient(135deg,#ff5d5d,#e23b3b);
+    border:1px solid rgba(255,120,120,.55);
+    color:#fff;font-size:13px;font-weight:700;
+    padding:9px 14px;border-radius:12px;cursor:pointer;transition:.15s;
+    box-shadow:0 4px 14px rgba(255,60,60,.4);
+  }
+  .reset-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .reset-btn:active{transform:scale(.95);background:linear-gradient(135deg,#e23b3b,#c92a2a);box-shadow:0 2px 8px rgba(255,60,60,.5)}
+  .brand{
+    display:flex;align-items:center;gap:11px;
+  }
+  .brand .logo{
+    width:40px;height:40px;border-radius:13px;
+    background:linear-gradient(135deg,var(--accent),#ff4d6d);
+    display:grid;place-items:center;
+    box-shadow:0 6px 22px rgba(255,90,80,.35),inset 0 1px 0 rgba(255,255,255,.25);
+    border:1px solid rgba(255,255,255,.14);
+  }
+  .brand .logo svg{width:22px;height:22px;display:block;
+    stroke:#fff;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;
+    filter:drop-shadow(0 1px 1px rgba(120,20,30,.35));}
+  .brand h1{font-size:23px;font-weight:700;letter-spacing:-.4px}
+  .brand .sub{font-size:12.5px;color:var(--txt-dim);margin-top:1px}
+  /* ---------- Views ---------- */
+  main{
+    flex:1 1 auto;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:4px 16px 24px;
+  }
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .section-title{
+    font-size:13px;text-transform:uppercase;letter-spacing:1.4px;
+    color:var(--txt-mute);font-weight:700;margin:18px 6px 10px;
+  }
+  /* ---------- Dashboard head + toggle ---------- */
+  .dash-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .toggle-done{
+    display:flex;align-items:center;gap:6px;flex:0 0 auto;margin:18px 6px 10px;
+    background:var(--glass-soft);border:1px solid var(--glass-brd);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    color:var(--txt-mute);font-size:12px;font-weight:700;
+    padding:7px 11px;border-radius:11px;cursor:pointer;transition:.15s;
+  }
+  .toggle-done svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .toggle-done:active{transform:scale(.95)}
+  .toggle-done.on{color:var(--green);border-color:rgba(47,191,113,.4);background:var(--green-soft)}
+  .nonfood-card{
+    margin-top:14px;padding:16px 18px;border-radius:18px;
+    border:1px solid var(--glass-brd);
+    backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+    box-shadow:var(--glass-shadow),var(--glass-hi);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .nonfood-card.ok{background:linear-gradient(135deg,rgba(47,191,113,.18),rgba(255,255,255,.03));border-color:rgba(47,191,113,.32)}
+  .nonfood-card.bad{background:linear-gradient(135deg,rgba(255,93,93,.16),rgba(255,255,255,.03));border-color:rgba(255,93,93,.32)}
+  .nonfood-card .k{font-size:13px;color:var(--txt-card);font-weight:600}
+  .nonfood-card .v{font-size:24px;font-weight:800;color:var(--accent);letter-spacing:-.5px;white-space:nowrap}
+  .nonfood-card .v .lei{font-size:13px;color:var(--txt-card-soft);font-weight:600;margin-left:4px}
+  /* ---------- Cards ---------- */
+  .card{
+    background:var(--glass);
+    backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+    border:1px solid var(--glass-brd);
+    border-radius:var(--radius);
+    overflow:hidden;
+    box-shadow:var(--glass-shadow),var(--glass-hi);
+  }
+  /* ---------- Dashboard rows ---------- */
+  .exp-row{
+    display:flex;align-items:center;gap:13px;
+    padding:14px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .exp-row:last-child{border-bottom:none}
+  .chk{
+    width:26px;height:26px;flex:0 0 auto;border-radius:9px;
+    border:2px solid var(--txt-mute);
+    display:grid;place-items:center;
+    transition:.18s;cursor:pointer;
+  }
+  .chk svg{width:15px;height:15px;stroke:#fff;stroke-width:3.4;fill:none;
+    stroke-linecap:round;stroke-linejoin:round;
+    stroke-dasharray:24;stroke-dashoffset:24;transition:.2s}
+  .chk.on{background:var(--green);border-color:var(--green);box-shadow:0 4px 14px var(--green-soft)}
+  .chk.on svg{stroke-dashoffset:0}
+  .exp-main{flex:1 1 auto;min-width:0}
+  .exp-name{font-size:15.5px;font-weight:600;transition:.2s}
+  .exp-meta{font-size:12px;color:var(--txt-dim);margin-top:2px}
+  .exp-row.done .exp-name{color:var(--txt-mute);text-decoration:line-through}
+  .exp-row.done .exp-sum{color:var(--txt-mute);text-decoration:line-through;opacity:.7}
+  .exp-row.done .exp-sum .lei{color:var(--txt-mute)}
+  .exp-sum{font-size:15.5px;font-weight:700;white-space:nowrap}
+  .exp-sum .lei{font-size:11px;color:var(--txt-dim);font-weight:600;margin-left:3px}
+  .tag-food{
+    font-size:10px;font-weight:700;letter-spacing:.5px;
+    color:var(--accent);background:var(--accent-soft);
+    padding:2px 7px;border-radius:6px;margin-left:7px;vertical-align:middle;
+  }
+  /* ---------- Sold ---------- */
+  .sold-card{
+    margin-top:18px;border-radius:22px;padding:20px;
+    border:1px solid var(--glass-brd);
+    backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+    box-shadow:0 18px 44px -20px rgba(0,0,0,.7),var(--glass-hi);
+    position:relative;overflow:hidden;
+  }
+  .sold-card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+    background:linear-gradient(140deg,rgba(255,255,255,.10),transparent 42%)}
+  .sold-card > *{position:relative;z-index:1}
+  .sold-card.ok{background:linear-gradient(135deg,rgba(47,191,113,.20),rgba(255,255,255,.03));border-color:rgba(47,191,113,.34)}
+  .sold-card.bad{background:linear-gradient(135deg,rgba(255,93,93,.18),rgba(255,255,255,.03));border-color:rgba(255,93,93,.34)}
+  .sold-label{font-size:13px;color:var(--txt-card);font-weight:600;letter-spacing:.3px}
+  .sold-val{font-size:38px;font-weight:800;letter-spacing:-1px;margin-top:4px;line-height:1}
+  .sold-card.ok .sold-val{color:var(--green)}
+  .sold-card.bad .sold-val{color:var(--red)}
+  .sold-val .lei{font-size:17px;font-weight:600;color:var(--txt-card);margin-left:6px}
+  .sold-note{font-size:12.5px;color:var(--txt-card);margin-top:10px;line-height:1.5}
+  .mini-stats{display:flex;gap:10px;margin-top:14px}
+  .mini{flex:1;background:var(--glass-soft);border:1px solid var(--glass-brd);border-radius:14px;padding:12px 14px;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:var(--glass-hi)}
+  .mini .k{font-size:11px;color:var(--txt-card-soft);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+  .mini .k .mini-ico{font-size:16px;vertical-align:-2px;margin-right:1px}
+  .mini .v{font-size:18px;font-weight:700;margin-top:3px}
+  /* ---------- Sume ---------- */
+  .money-block{padding:16px}
+  .money-block + .money-block{border-top:1px solid var(--line)}
+  .money-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .money-ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:21px}
+  .ico-cash{background:var(--green-soft)}
+  .ico-card{background:rgba(74,168,255,.14)}
+  /* iconiță cash = 3 monede stacked (scalează cu font-size-ul contextului) */
+  .coin-stack{width:1.1em;height:1.1em;fill:none;stroke:var(--cream);stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;vertical-align:-.16em;flex:0 0 auto}
+  .money-head .t{font-size:16px;font-weight:700}
+  .money-head .d{font-size:12px;color:var(--txt-dim)}
+  .money-input-wrap{
+    display:flex;align-items:center;gap:10px;
+    background:rgba(8,11,16,.5);border:1.5px solid var(--glass-brd);
+    border-radius:14px;padding:14px 16px;transition:.18s;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.35);
+  }
+  .money-input-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .money-input-wrap .cur{font-size:20px;font-weight:700;color:var(--txt-mute)}
+  .money-input-wrap input{
+    flex:1;background:none;border:none;outline:none;color:var(--txt);
+    font-size:26px;font-weight:700;width:100%;text-align:right;
+    font-variant-numeric:tabular-nums;user-select:text;
+  }
+  .money-input-wrap .unit{font-size:14px;color:var(--txt-dim);font-weight:600}
+  .total-card{
+    margin-top:18px;padding:20px;border-radius:20px;
+    background:linear-gradient(135deg,rgba(255,122,60,.17),rgba(255,255,255,.03));
+    backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+    border:1px solid rgba(255,122,60,.30);
+    box-shadow:var(--glass-shadow),var(--glass-hi);
+    display:flex;justify-content:space-between;align-items:flex-end;
+  }
+  .total-card .k{font-size:13px;color:var(--txt-dim);font-weight:600}
+  .total-card .v{font-size:34px;font-weight:800;letter-spacing:-1px;color:var(--accent)}
+  .total-card .v .lei{font-size:16px;color:var(--txt-dim);font-weight:600;margin-left:5px}
+  /* ---------- Categorii ---------- */
+  .cat-table-head{
+    display:grid;grid-template-columns:1fr 92px 56px 34px;gap:8px;
+    padding:0 14px 8px;font-size:11px;text-transform:uppercase;
+    letter-spacing:.8px;color:var(--txt-mute);font-weight:700;
+  }
+  .cat-row{
+    display:grid;grid-template-columns:1fr 92px 56px 34px;gap:8px;align-items:center;
+    padding:9px 14px;border-bottom:1px solid var(--line);
+  }
+  .cat-row:last-child{border-bottom:none}
+  .cell-in{
+    background:var(--bg);border:1.5px solid transparent;border-radius:10px;
+    padding:10px 11px;color:var(--txt);font-size:14.5px;font-weight:600;
+    width:100%;outline:none;transition:.15s;user-select:text;
+    font-variant-numeric:tabular-nums;
+  }
+  .cell-in:focus{border-color:var(--accent);background:#0c1118}
+  .cell-name{font-weight:600}
+  .cell-num{text-align:right}
+  .cell-day{text-align:center}
+  .del-btn{
+    width:30px;height:30px;border-radius:9px;border:none;
+    background:var(--red-soft);color:var(--red);font-size:17px;font-weight:700;
+    display:grid;place-items:center;cursor:pointer;
+  }
+  .add-btn{
+    width:100%;margin-top:14px;padding:15px;border-radius:16px;border:1.5px dashed rgba(255,255,255,.14);
+    background:var(--glass-soft);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    color:var(--accent);font-size:15px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:.15s;
+  }
+  .add-btn:active{transform:scale(.98);background:rgba(255,255,255,.08)}
+  .save-btn{color:var(--green);border:1.5px solid rgba(47,191,113,.45);background:var(--green-soft)}
+  .save-btn:active{background:rgba(47,191,113,.2)}
+  .save-btn:disabled{color:var(--txt-mute);border:1.5px solid var(--line);background:var(--glass-soft);cursor:not-allowed;opacity:.6}
+  .save-btn:disabled:active{transform:none}
+  .cat-row.draft{background:var(--accent-soft);box-shadow:inset 0 0 0 1px rgba(255,122,60,.25)}
+  /* ---------- Food ---------- */
+  .food-hero{
+    margin-top:6px;padding:26px 22px;border-radius:24px;text-align:center;
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(255,122,60,.26), transparent 70%),
+      var(--glass);
+    backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+    border:1px solid var(--glass-brd);
+    box-shadow:0 18px 44px -22px rgba(0,0,0,.66),var(--glass-hi);
+  }
+  .food-hero .big{font-size:64px;font-weight:800;line-height:1;letter-spacing:-2px;
+    background:linear-gradient(135deg,var(--accent),#ff4d6d);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .food-hero .big.secured{font-size:32px}
+  .food-hero .cap{font-size:14px;color:var(--txt-card);font-weight:600;margin-top:10px;text-transform:uppercase;letter-spacing:1.5px}
+  .food-alloc{
+    margin-top:16px;padding:20px;border-radius:20px;
+    background:linear-gradient(135deg,rgba(255,122,60,.14),rgba(255,255,255,.03));
+    backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+    border:1px solid rgba(255,122,60,.26);
+    box-shadow:var(--glass-shadow),var(--glass-hi);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .food-alloc .k{font-size:13px;color:var(--txt-card);font-weight:600;max-width:55%;line-height:1.4}
+  .food-alloc .v{font-size:30px;font-weight:800;color:var(--accent);letter-spacing:-1px;white-space:nowrap}
+  .food-alloc .v .lei{font-size:15px;color:var(--txt-card-soft);font-weight:600;margin-left:4px}
+  .food-actual{margin-top:12px}
+  .food-alloc-l{display:flex;flex-direction:column;gap:4px;max-width:55%}
+  .food-alloc-l .k{max-width:none}
+  /* carduri selectabile (prev / actual) */
+  .food-alloc.selectable{cursor:pointer;border:1.5px solid transparent;transition:.15s}
+  .food-alloc.selectable:active{transform:scale(.99)}
+  .food-alloc.active{border-color:rgba(255,122,60,.55);background:var(--accent-soft)}
+  /* eticheta „activ" — ascunsă implicit, vizibilă pe cardul activ */
+  .food-pick{display:none;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:middle}
+  .food-alloc.active .food-pick{display:inline-block}
+  /* diferența prev − actual (depășire) */
+  .food-diff{display:none;font-size:20.5px;font-weight:400;color:var(--red);margin-top:4px;text-align:right}
+  .food-diff.show{display:block}
+  /* mențiune buget activ în cardul Total Food */
+  .food-mode-tag{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:middle}
+  .food-actual-r{display:flex;flex-direction:column;align-items:flex-end}
+  .food-perday{font-size:20.5px;color:var(--txt-card);font-weight:400;margin-top:4px;text-align:right}
+  /* ---------- Jurnal ---------- */
+  .jurnal-add{display:flex;flex-direction:column;gap:11px;padding:12px}
+  .jrn-srctoggle{display:flex;gap:8px}
+  .jrn-src{
+    flex:1;padding:11px;border-radius:11px;
+    background:rgba(8,11,16,.45);border:1.5px solid var(--glass-brd);
+    color:var(--txt-dim);font-size:14px;font-weight:700;cursor:pointer;transition:.15s;
+  }
+  .jrn-src:active{transform:scale(.97)}
+  .jrn-src.on{color:var(--accent);border-color:rgba(255,122,60,.45);background:var(--accent-soft)}
+  #foodActual.pos{color:var(--green)}
+  #foodActual.neg{color:var(--red)}
+  #foodActual{cursor:pointer}
+  .actual-edit{
+    width:128px;background:rgba(8,11,16,.6);border:1.5px solid var(--accent);border-radius:10px;
+    color:var(--txt);font-size:30px;font-weight:800;text-align:right;padding:2px 8px;outline:none;
+    font-variant-numeric:tabular-nums;letter-spacing:-1px;
+  }
+  .jrn-inputs{display:flex;gap:9px;align-items:center}
+  .jrn-tag{font-size:10px;font-weight:700;letter-spacing:.4px;padding:2px 7px;border-radius:6px;margin-left:7px;vertical-align:middle}
+  .jrn-tag.card{color:var(--blue);background:rgba(74,168,255,.14)}
+  .jrn-tag.cash{color:var(--green);background:var(--green-soft)}
+  .jrn-in,.jrn-amt-wrap{
+    background:rgba(8,11,16,.45);border:1.5px solid var(--glass-brd);border-radius:12px;transition:.15s;
+  }
+  .jrn-in{
+    padding:12px 11px;color:var(--txt);font-size:14.5px;font-weight:600;outline:none;
+    font-variant-numeric:tabular-nums;user-select:text;
+  }
+  .jrn-date{flex:0 0 auto;color-scheme:dark}
+  .jrn-in:focus{border-color:var(--accent)}
+  .jrn-amt-wrap{flex:1;min-width:0;display:flex;align-items:center;gap:6px;padding:0 12px}
+  .jrn-amt-wrap:focus-within{border-color:var(--accent)}
+  .jrn-amt-in{
+    flex:1;min-width:0;background:none;border:none;outline:none;color:var(--txt);
+    font-size:15px;font-weight:600;text-align:right;padding:12px 0;width:100%;
+    font-variant-numeric:tabular-nums;user-select:text;
+  }
+  .jrn-unit{font-size:13px;color:var(--txt-dim);font-weight:600}
+  .jrn-add-btn{
+    flex:0 0 auto;width:46px;height:46px;border-radius:12px;border:none;
+    background:linear-gradient(135deg,var(--accent),#ff4d6d);color:#fff;font-size:24px;font-weight:700;
+    display:grid;place-items:center;cursor:pointer;transition:.15s;
+  }
+  .jrn-add-btn:active{transform:scale(.93)}
+  .jrn-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line)}
+  .jrn-row:last-child{border-bottom:none}
+  .jrn-row .d{font-size:14.5px;font-weight:600;flex:1 1 auto}
+  .jrn-row .a{font-size:15px;font-weight:700;color:var(--accent);white-space:nowrap}
+  .jrn-row .a .lei{font-size:11px;color:var(--txt-dim);font-weight:600;margin-left:3px}
+  /* ---------- Bottom nav ---------- */
+  nav{
+    flex:0 0 auto;
+    display:flex;
+    background:rgba(13,18,26,.6);
+    backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);
+    border-top:1px solid var(--glass-brd);
+    box-shadow:0 -8px 30px -12px rgba(0,0,0,.6);
+    padding:8px 8px calc(var(--safe-b) + 8px);
+  }
+  .nav-btn{
+    flex:1;background:none;border:none;color:var(--txt-mute);
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    padding:7px 0;cursor:pointer;font-size:11px;font-weight:600;transition:.18s;border-radius:14px;
+  }
+  .nav-btn svg{width:24px;height:24px;stroke:currentColor;stroke-width:1.9;fill:none;
+    stroke-linecap:round;stroke-linejoin:round;transition:.18s}
+  .nav-btn.active{color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px rgba(255,122,60,.25)}
+  .nav-btn.active svg{stroke:var(--accent);filter:drop-shadow(0 3px 8px rgba(255,122,60,.5))}
+  .empty{padding:40px 20px;text-align:center;color:var(--txt-mute);font-size:14px}
+  /* ---------- Source sheet ---------- */
+  .sheet-overlay{
+    position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;
+    background:rgba(4,7,11,.55);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+    opacity:0;visibility:hidden;transition:opacity .2s ease,visibility .2s ease;
+  }
+  .sheet-overlay.show{opacity:1;visibility:visible}
+  .sheet{
+    width:100%;max-width:480px;
+    padding:14px 18px calc(var(--safe-b) + 18px);
+    background:var(--card-2);
+    border:1px solid var(--glass-brd);border-bottom:none;
+    border-radius:24px 24px 0 0;
+    box-shadow:0 -18px 50px -16px rgba(0,0,0,.7),var(--glass-hi);
+    transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.25,1);
+  }
+  .sheet-overlay.show .sheet{transform:translateY(0)}
+  .sheet-grip{width:38px;height:4px;border-radius:3px;background:var(--line);margin:2px auto 14px}
+  .sheet-title{font-size:17px;font-weight:800;text-align:center;letter-spacing:-.3px}
+  .sheet-sub{font-size:13px;color:var(--txt-dim);text-align:center;margin-top:4px;min-height:18px}
+  .sheet-opt{
+    display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+    margin-top:12px;padding:16px;border-radius:16px;cursor:pointer;transition:.15s;
+    font-size:16px;font-weight:700;color:var(--txt);
+    border:1.5px solid var(--glass-brd);background:var(--glass-soft);
+  }
+  .sheet-opt .ic{font-size:20px}
+  .sheet-opt:active{transform:scale(.98)}
+  .sheet-opt.card{border-color:rgba(74,168,255,.45);background:rgba(74,168,255,.12);color:var(--blue)}
+  .sheet-opt.cash{border-color:rgba(47,191,113,.45);background:var(--green-soft);color:var(--green)}
+  .sheet-cancel{
+    width:100%;margin-top:12px;padding:14px;border-radius:14px;border:none;cursor:pointer;
+    background:transparent;color:var(--txt-mute);font-size:15px;font-weight:700;
+  }
+  .sheet-cancel:active{color:var(--txt)}
+</style>
+</head>
+<body>
+<div class="ambient" aria-hidden="true"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
+<div id="app">
+  <header>
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24">
+          <ellipse cx="12" cy="6" rx="7" ry="2.5"/>
+          <path d="M5 6v10.5a7 2.5 0 0 0 14 0V6"/>
+          <path d="M5 9.5a7 2.5 0 0 0 14 0"/>
+          <path d="M5 13a7 2.5 0 0 0 14 0"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Buget</h1>
+        <div class="sub" id="dateSub"></div>
+      </div>
+    </div>
+    <button class="reset-btn" id="resetBtn" aria-label="Reset">
+      <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 2.6-6.3M3 4v4h4"/></svg>
+      Reset
+    </button>
+  </header>
+
+  <main>
+    <!-- DASHBOARD -->
+    <section class="view active" id="view-dashboard">
+      <div class="sold-card" id="soldCard" style="margin-top:6px">
+        <div class="sold-label">Sold buget</div>
+        <div class="sold-val" id="soldVal"></div>
+        <div class="mini-stats">
+          <div class="mini"><div class="k">Disponibil</div><div class="v" id="miniAvail"></div></div>
+          <div class="mini"><div class="k">De plătit</div><div class="v" id="miniRemain"></div></div>
+        </div>
+        <div class="mini-stats">
+          <div class="mini"><div class="k"><span class="mini-ico"><svg class="coin-stack" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v9a7 2.5 0 0 0 14 0V6"/><path d="M5 9a7 2.5 0 0 0 14 0"/><path d="M5 12a7 2.5 0 0 0 14 0"/></svg></span> Cash</div><div class="v" id="miniCash"></div></div>
+          <div class="mini"><div class="k"><span class="mini-ico">💳</span> Card</div><div class="v" id="miniCard"></div></div>
+        </div>
+      </div>
+      <div class="nonfood-card" id="nonFoodCard">
+        <div class="k">Total <b>non</b>-Food</div>
+        <div class="v" id="nonFoodVal">0<span class="lei">lei</span></div>
+      </div>
+      <div class="nonfood-card" id="foodTotalCard">
+        <div class="k">Total Food <span class="food-mode-tag" id="foodTotalSub">Previzionat</span></div>
+        <div class="v" id="foodTotalVal">0<span class="lei">lei</span></div>
+      </div>
+      <div class="dash-head">
+        <div class="section-title">Cheltuieli</div>
+        <button class="toggle-done on" id="toggleDone" aria-pressed="true">
+          <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span id="toggleDoneLabel">Efectuate</span>
+        </button>
+      </div>
+      <div class="card" id="dashList"></div>
+    </section>
+
+    <!-- SUME -->
+    <section class="view" id="view-sume">
+      <div class="section-title">Sume disponibile</div>
+      <div class="card">
+        <div class="money-block">
+          <div class="money-head">
+            <div class="money-ico ico-cash"><svg class="coin-stack" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v9a7 2.5 0 0 0 14 0V6"/><path d="M5 9a7 2.5 0 0 0 14 0"/><path d="M5 12a7 2.5 0 0 0 14 0"/></svg></div>
+            <div><div class="t">Cash</div><div class="d">Bani lichizi</div></div>
+          </div>
+          <div class="money-input-wrap">
+            <span class="cur">RON</span>
+            <input id="inCash" inputmode="decimal" type="text" placeholder="0">
+            <span class="unit">lei</span>
+          </div>
+        </div>
+        <div class="money-block">
+          <div class="money-head">
+            <div class="money-ico ico-card">💳</div>
+            <div><div class="t">Card</div><div class="d">Sold cont bancar</div></div>
+          </div>
+          <div class="money-input-wrap">
+            <span class="cur">RON</span>
+            <input id="inCard" inputmode="decimal" type="text" placeholder="0">
+            <span class="unit">lei</span>
+          </div>
+        </div>
+      </div>
+      <div class="total-card">
+        <div class="k">Total sume</div>
+        <div class="v" id="sumeTotal">0<span class="lei">lei</span></div>
+      </div>
+    </section>
+
+    <!-- CATEGORII -->
+    <section class="view" id="view-categorii">
+      <div class="section-title">Categorii de cheltuieli</div>
+      <div class="cat-table-head">
+        <div>Cheltuială</div><div style="text-align:right">Lei</div><div style="text-align:center">Data</div><div></div>
+      </div>
+      <div class="card" id="catList"></div>
+      <button class="add-btn save-btn" id="saveCat" style="display:none">✓ Salvează</button>
+      <button class="add-btn" id="addCat">＋ Adaugă categorie</button>
+
+      <div class="section-title">Jurnal cheltuieli</div>
+      <div class="card jurnal-add">
+        <div class="jrn-srctoggle">
+          <button class="jrn-src on" data-src="card">💳 Card</button>
+          <button class="jrn-src" data-src="cash"><svg class="coin-stack" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v9a7 2.5 0 0 0 14 0V6"/><path d="M5 9a7 2.5 0 0 0 14 0"/><path d="M5 12a7 2.5 0 0 0 14 0"/></svg> Cash</button>
+        </div>
+        <div class="jrn-inputs">
+          <input class="jrn-in jrn-date" type="date" id="catJrnDate">
+          <div class="jrn-amt-wrap">
+            <input class="jrn-amt-in" id="catJrnAmount" inputmode="decimal" type="text" placeholder="Sumă">
+            <span class="jrn-unit">lei</span>
+          </div>
+          <button class="jrn-add-btn" id="catJrnAdd" aria-label="Adaugă">＋</button>
+        </div>
+      </div>
+      <div class="card" id="catJrnList"></div>
+    </section>
+
+    <!-- FOOD -->
+    <section class="view" id="view-food">
+      <div class="section-title">Buget Food</div>
+      <div class="food-hero">
+        <div class="big" id="foodBig"></div>
+        <div class="cap" id="foodCap"></div>
+      </div>
+      <div class="food-alloc selectable" id="foodPrevCard">
+        <div class="k">Buget <b>previzionat</b> <span class="food-pick" id="foodPrevPick">activ</span></div>
+        <div class="food-actual-r">
+          <div class="v" id="foodPrev">0<span class="lei">lei</span></div>
+          <div class="food-diff" id="foodDiff"></div>
+        </div>
+      </div>
+      <div class="food-alloc food-actual selectable" id="foodActualCard">
+        <div class="k">Buget <b>actual</b> <span class="food-pick" id="foodActualPick">activ</span></div>
+        <div class="food-actual-r">
+          <div class="v" id="foodActual">0<span class="lei">lei</span></div>
+          <div class="food-perday" id="foodPerDay">0 lei/zi</div>
+        </div>
+      </div>
+
+      <div class="section-title">Jurnal</div>
+      <div class="card jurnal-add">
+        <div class="jrn-srctoggle">
+          <button class="jrn-src on" data-src="card">💳 Card</button>
+          <button class="jrn-src" data-src="cash"><svg class="coin-stack" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v9a7 2.5 0 0 0 14 0V6"/><path d="M5 9a7 2.5 0 0 0 14 0"/><path d="M5 12a7 2.5 0 0 0 14 0"/></svg> Cash</button>
+        </div>
+        <div class="jrn-inputs">
+          <input class="jrn-in jrn-date" type="date" id="jrnDate">
+          <div class="jrn-amt-wrap">
+            <input class="jrn-amt-in" id="jrnAmount" inputmode="decimal" type="text" placeholder="Sumă">
+            <span class="jrn-unit">lei</span>
+          </div>
+          <button class="jrn-add-btn" id="jrnAdd" aria-label="Adaugă">＋</button>
+        </div>
+      </div>
+      <div class="card" id="jrnList"></div>
+    </section>
+  </main>
+
+  <nav>
+    <button class="nav-btn active" data-view="dashboard">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-btn" data-view="sume">
+      <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2.5"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 6V4.5M18 6V4.5"/></svg>
+      Sume
+    </button>
+    <button class="nav-btn" data-view="categorii">
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="3.5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="3.5" cy="18" r="1.3" fill="currentColor" stroke="none"/></svg>
+      Categorii
+    </button>
+    <button class="nav-btn" data-view="food">
+      <svg viewBox="0 0 24 24"><path d="M5 3v7a3 3 0 0 0 6 0V3M8 3v18M19 3c-1.5 0-3 1.5-3 5s1.5 4 3 4v9"/></svg>
+      Food
+    </button>
+  </nav>
+
+  <div class="sheet-overlay" id="srcSheet" aria-hidden="true">
+    <div class="sheet">
+      <div class="sheet-grip"></div>
+      <div class="sheet-title">De unde s-a plătit?</div>
+      <div class="sheet-sub" id="srcSheetName"></div>
+      <button class="sheet-opt card" data-src="card"><span class="ic">💳</span> Card</button>
+      <button class="sheet-opt cash" data-src="cash"><span class="ic"><svg class="coin-stack" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v9a7 2.5 0 0 0 14 0V6"/><path d="M5 9a7 2.5 0 0 0 14 0"/><path d="M5 12a7 2.5 0 0 0 14 0"/></svg></span> Cash</button>
+      <button class="sheet-cancel" data-src="">Anulează</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ---------------- State ---------------- */
+const FOOD_PER_DAY = 180;
+const RESET_DAY = 19;
+
+const DEFAULT_CATS = [
+  {name:"Chirie",       lei:1050, data:5,  done:false},
+  {name:"Intretinere",  lei:300,  data:5,  done:false},
+  {name:"Curent",       lei:250,  data:5,  done:false},
+  {name:"Combustibil",  lei:350,  data:5,  done:false},
+  {name:"Scoala",       lei:2000, data:5,  done:false},
+  {name:"Acrobatii",    lei:300,  data:5,  done:false},
+  {name:"Internet Digi",lei:40,   data:7,  done:false},
+  {name:"SQX",          lei:460,  data:8,  done:false},
+  {name:"Ninja Sport",  lei:345,  data:10, done:false},
+  {name:"Parkour",      lei:225,  data:10, done:false},
+  {name:"Telefon",      lei:160,  data:20, done:false},
+  {name:"Spotify",      lei:50,   data:27, done:false},
+];
+
+const KEY = "buget.state.v2";
+let state = load();
+// migrare/normalizare pentru stările salvate mai vechi
+if(!Array.isArray(state.foodJournal)) state.foodJournal = [];
+if(!Array.isArray(state.catJournal)) state.catJournal = [];
+if(state.foodBudgetMode!=="actual" && state.foodBudgetMode!=="prev") state.foodBudgetMode = "prev";
+// conversie unică la „solduri live": scade din cash/card tot ce era cheltuit deja
+if(!state.liveBalances){
+  state.cash = (+state.cash||0) - journalBySrc("cash") - catJournalBySrc("cash") - paidCatsBySrc("cash");
+  state.card = (+state.card||0) - journalBySrc("card") - catJournalBySrc("card") - paidCatsBySrc("card");
+  state.liveBalances = true;
+  save();
+}
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){
+      const s = JSON.parse(raw);
+      if(s && Array.isArray(s.categories)) return s;
+    }
+  }catch(e){}
+  return { cash:0, card:0, categories:structuredClone(DEFAULT_CATS), foodDone:false, hideDone:false, foodJournal:[], catJournal:[], foodActualBase:null, foodBudgetMode:"prev", liveBalances:true };
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+}
+
+/* ---------------- Helpers ---------------- */
+const $  = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+const fmt = n => Math.round(n).toLocaleString("ro-RO");
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+const MONTHS_SHORT=["ian","feb","mar","apr","mai","iun","iul","aug","sep","oct","noi","dec"];
+function dayKey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function todayKey(){ return dayKey(new Date()); }
+function fmtJrnDate(key){
+  const p = (key||"").split("-").map(Number);
+  if(p.length<3 || isNaN(p[2])) return key||"";
+  return p[2]+" "+(MONTHS_SHORT[p[1]-1]||"");
+}
+// Food budgets
+function journalSum(){ return (state.foodJournal||[]).reduce((a,e)=> a + (+e.amount||0), 0); }
+function journalBySrc(src){ return (state.foodJournal||[]).reduce((a,e)=> a + (((e.src||"card")===src)?(+e.amount||0):0), 0); }
+// Jurnal Categorii (cheltuieli diverse, scad direct din sursă)
+function catJournalBySrc(src){ return (state.catJournal||[]).reduce((a,e)=> a + (((e.src||"card")===src)?(+e.amount||0):0), 0); }
+// Cheltuieli bifate (plătite) din lista de categorii, pe sursă (folosit doar la migrare)
+function paidCatsBySrc(src){ return state.categories.reduce((a,c)=> a + ((c.done && (c.src||null)===src)?(+c.lei||0):0), 0); }
+// cash/card sunt solduri live — scad direct la fiecare plată/jurnal
+function effCash(){ return (+state.cash||0); }
+function effCard(){ return (+state.card||0); }
+// scade/adaugă direct din soldul unei surse
+function adjustBalance(src, delta){ if(src!=="cash"&&src!=="card") src="card"; state[src] = (+state[src]||0) + delta; }
+function bugetActual(){ return (state.foodActualBase||0) - journalSum(); }
+// suma Food folosită la Dashboard / Sold, în funcție de bugetul selectat
+function foodActiveAmount(){ return state.foodBudgetMode==="actual" ? bugetActual() : foodInfo().amount; }
+let jrnSrc = "card";
+function ensureActualBase(){
+  if(state.foodActualBase==null){ state.foodActualBase = foodInfo().amount; save(); }
+}
+
+function foodInfo(){
+  const day = new Date().getDate();
+  if(day <= RESET_DAY){
+    const daysLeft = RESET_DAY - day + 1;
+    return { secured:false, daysLeft, amount:daysLeft*FOOD_PER_DAY };
+  }
+  return { secured:true, daysLeft:0, amount:0 };
+}
+
+/* ---------------- Render: Dashboard ---------------- */
+function renderDashboard(){
+  ensureActualBase();
+  const list = $("#dashList");
+  list.innerHTML = "";
+  const f = foodInfo();
+  const foodActual = foodActiveAmount();   // suma după bugetul selectat (prev/actual)
+  const modePrev = state.foodBudgetMode!=="actual";
+
+  // toggle button state
+  const tg = $("#toggleDone");
+  tg.classList.toggle("on", !state.hideDone);
+  tg.setAttribute("aria-pressed", String(!state.hideDone));
+
+  // expense categories, ordered by date (ascending)
+  const sortedCats = [...state.categories].sort((a,b)=> a.data - b.data);
+  sortedCats.forEach((c)=>{
+    if(state.hideDone && c.done) return;
+    const meta = c.done && c.src ? "Plătit "+(c.src==="cash"?"cash":"card") : "Data "+c.data;
+    list.appendChild(expRow({
+      name:c.name, sum:c.lei, meta, done:c.done,
+      onToggle:async ()=>{
+        if(!c.done){
+          const src = await askSource(c.name, c.lei);
+          if(!src) return;                       // anulat → rămâne nebifat
+          c.done = true; c.src = src;
+          adjustBalance(src, -(+c.lei||0));       // scade din sursa aleasă
+        }else{
+          if(c.src) adjustBalance(c.src, +(+c.lei||0)); // restituie banii
+          c.done = false; c.src = null;
+        }
+        save(); renderDashboard();
+      }
+    }));
+  });
+
+  // Food as an expense row
+  if(!(state.hideDone && state.foodDone)){
+    const modeTxt = modePrev ? "Previzionat" : "Actual";
+    const foodLabelMeta = f.secured ? ("Asigurat · "+modeTxt) : (modeTxt+" · "+f.daysLeft+" zile × 180");
+    list.appendChild(expRow({
+      name:"Food", sum:foodActual, meta:foodLabelMeta, done:state.foodDone, food:true,
+      onToggle:()=>{ state.foodDone=!state.foodDone; save(); renderDashboard(); }
+    }));
+  }
+
+  if(!list.children.length){
+    list.innerHTML = '<div class="empty">Toate cheltuielile sunt efectuate.</div>';
+  }
+
+  // ---- Sold ----
+  const cashLeft = effCash();
+  const cardLeft = effCard();
+  const avail = cashLeft + cardLeft;          // Disponibil = banii rămași în cash + card
+  // De plătit = cheltuielile nebifate (+ Food dacă nu e bifat) — obligații rămase
+  const nonFood = state.categories.reduce((a,c)=> a + (c.done?0:(+c.lei||0)), 0);
+  let remaining = nonFood;
+  if(!state.foodDone) remaining += foodActual;
+  // Sold buget = Disponibil − De plătit
+  const sold = avail - remaining;
+
+  const foodTotal = state.foodDone ? 0 : foodActual;
+  $("#nonFoodVal").innerHTML = fmt(nonFood)+'<span class="lei">lei</span>';
+  $("#foodTotalVal").innerHTML = fmt(foodTotal)+'<span class="lei">lei</span>';
+  $("#foodTotalSub").textContent = modePrev ? "Previzionat" : "Actual";
+  const stateCls = sold>=0 ? "ok" : "bad";
+  $("#nonFoodCard").className = "nonfood-card " + stateCls;
+  $("#foodTotalCard").className = "nonfood-card " + stateCls;
+
+  const card = $("#soldCard");
+  const ok = sold >= 0;
+  card.className = "sold-card " + (ok?"ok":"bad");
+  $("#soldVal").innerHTML = (sold<0?"−":"") + fmt(Math.abs(sold)) + '<span class="lei">lei</span>';
+  const leiDim = '<span style="font-size:11px;color:var(--txt-card-soft)"> lei</span>';
+  $("#miniAvail").innerHTML = fmt(cashLeft + cardLeft)+leiDim;
+  $("#miniCash").innerHTML = fmt(cashLeft)+leiDim;
+  $("#miniCard").innerHTML = fmt(cardLeft)+leiDim;
+  $("#miniRemain").innerHTML = fmt(remaining)+leiDim;
+}
+
+function expRow({name,sum,meta,done,onToggle,food}){
+  const row = document.createElement("div");
+  row.className = "exp-row" + (done?" done":"");
+  row.innerHTML = `
+    <div class="chk ${done?"on":""}">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="exp-main">
+      <div class="exp-name">${escapeHtml(name)}${food?'<span class="tag-food">FOOD</span>':''}</div>
+      <div class="exp-meta">${escapeHtml(meta)}</div>
+    </div>
+    <div class="exp-sum">${fmt(sum)}<span class="lei">lei</span></div>`;
+  $(".chk",row).addEventListener("click", onToggle);
+  return row;
+}
+
+/* ---------------- Render: Sume ---------------- */
+function renderSume(){
+  $("#inCash").value = state.cash ? state.cash : "";
+  $("#inCard").value = state.card ? state.card : "";
+  updateSumeTotal();
+}
+function updateSumeTotal(){
+  const t = (+state.cash||0)+(+state.card||0);
+  $("#sumeTotal").innerHTML = fmt(t)+'<span class="lei">lei</span>';
+}
+function parseNum(v){
+  v = (v||"").toString().replace(/\s/g,"").replace(",",".");
+  const n = parseFloat(v);
+  return isNaN(n)?0:n;
+}
+
+/* ---------------- Render: Categorii ---------------- */
+function catRow(c){
+  const row = document.createElement("div");
+  row.className = "cat-row" + (c._draft ? " draft" : "");
+  // pentru categoria nouă (draft) câmpurile numerice pornesc goale
+  const leiVal = (c._draft && !c.lei) ? "" : c.lei;
+  const dayVal = (c._draft && !c.data) ? "" : c.data;
+  row.innerHTML = `
+    <input class="cell-in cell-name" type="text" value="${escapeAttr(c.name)}" placeholder="Nume">
+    <input class="cell-in cell-num"  inputmode="decimal" type="text" value="${leiVal}" placeholder="0">
+    <input class="cell-in cell-day"  inputmode="numeric" type="text" value="${dayVal}" placeholder="zi">
+    <button class="del-btn" aria-label="Șterge">×</button>`;
+  const [nameI,leiI,dayI] = $$("input",row);
+  nameI.addEventListener("input", ()=>{ c.name=nameI.value; save(); updateSaveBtn(); });
+  leiI.addEventListener("input", ()=>{ c.lei=parseNum(leiI.value); save(); updateSaveBtn(); });
+  leiI.addEventListener("blur", ()=>{ if(!(c._draft && !c.lei)) leiI.value=c.lei; });
+  dayI.addEventListener("input", ()=>{ let d=parseInt(dayI.value)||0; d=Math.max(0,Math.min(31,d)); c.data=d; save(); updateSaveBtn(); });
+  dayI.addEventListener("blur", ()=>{ if(!(c._draft && !c.data)) dayI.value=c.data; });
+  $(".del-btn",row).addEventListener("click", ()=>{
+    state.categories = state.categories.filter(x=>x!==c);
+    save(); renderCategorii();
+  });
+  return row;
+}
+function renderCategorii(){
+  const list = $("#catList");
+  list.innerHTML = "";
+  const saved  = state.categories.filter(c=>!c._draft);
+  const drafts = state.categories.filter(c=> c._draft);
+  if(!saved.length && !drafts.length){
+    list.innerHTML = '<div class="empty">Nicio categorie. Adaugă una mai jos.</div>';
+  }else{
+    // salvate, sortate după dată; draftul (nou) mereu la final
+    [...saved].sort((a,b)=> a.data - b.data).concat(drafts)
+      .forEach(c=> list.appendChild(catRow(c)));
+  }
+  // butonul Salvează apare doar cât timp există o categorie nouă needitată
+  updateSaveBtn();
+}
+// o categorie nouă e completă doar cu nume, sumă > 0 și zi validă
+function draftComplete(c){ return (c.name||"").trim()!=="" && (+c.lei||0)>0 && (+c.data||0)>=1; }
+function updateSaveBtn(){
+  const drafts = state.categories.filter(c=>c._draft);
+  const btn = $("#saveCat");
+  btn.style.display = drafts.length ? "" : "none";
+  btn.disabled = !(drafts.length && drafts.every(draftComplete)); // inactiv până se completează tot
+}
+
+/* ---------------- Render: Food ---------------- */
+function renderFood(){
+  ensureActualBase();
+  const f = foodInfo();
+  const big = $("#foodBig"), cap = $("#foodCap");
+  if(f.secured){
+    big.textContent = "Food asigurat";
+    big.classList.add("secured");
+    cap.textContent = "până la următorul reset (19)";
+  }else{
+    big.textContent = f.daysLeft;
+    big.classList.remove("secured");
+    cap.textContent = "Zile rămase";
+  }
+  // Buget previzionat (fix) = zile rămase × 180
+  $("#foodPrev").innerHTML = fmt(f.amount)+'<span class="lei">lei</span>';
+  // Buget actual = bază − cheltuieli din Jurnal
+  const actual = bugetActual();
+  const actualEl = $("#foodActual");
+  actualEl.innerHTML = fmt(actual)+'<span class="lei">lei</span>';
+  actualEl.classList.toggle("neg", actual < f.amount);
+  actualEl.classList.toggle("pos", actual >= f.amount);
+  const perDay = f.daysLeft>0 ? actual/f.daysLeft : 0;
+  $("#foodPerDay").textContent = fmt(perDay)+" lei/zi";
+
+  // card activ (prev / actual) — exclusiv
+  const modePrev = state.foodBudgetMode!=="actual";
+  $("#foodPrevCard").classList.toggle("active", modePrev);
+  $("#foodActualCard").classList.toggle("active", !modePrev);
+
+  // diferență sub previzionat când actual < previzionat (depășire)
+  const diffEl = $("#foodDiff");
+  const lipsa = f.amount - actual;
+  if(lipsa > 0){
+    diffEl.textContent = "−"+fmt(lipsa)+" lei";
+    diffEl.classList.add("show");
+  }else{
+    diffEl.classList.remove("show");
+  }
+
+  if(!$("#jrnDate").value) $("#jrnDate").value = todayKey();
+  renderJournal();
+}
+
+function renderJournal(){
+  const list = $("#jrnList");
+  list.innerHTML = "";
+  const entries = [...(state.foodJournal||[])].sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0));
+  if(!entries.length){
+    list.innerHTML = '<div class="empty">Nicio cheltuială înregistrată.</div>';
+    return;
+  }
+  entries.forEach(e=>{
+    const row = document.createElement("div");
+    row.className = "jrn-row";
+    const src = (e.src||"card")==="cash" ? "cash" : "card";
+    row.innerHTML = `
+      <div class="d">${escapeHtml(fmtJrnDate(e.date))}<span class="jrn-tag ${src}">${src==="cash"?"Cash":"Card"}</span></div>
+      <div class="a">${fmt(e.amount)}<span class="lei">lei</span></div>
+      <button class="del-btn" aria-label="Șterge">×</button>`;
+    $(".del-btn",row).addEventListener("click", ()=>{
+      adjustBalance(e.src, +(+e.amount||0)); // restituie banii în sold
+      state.foodJournal = state.foodJournal.filter(x=>x!==e);
+      save(); renderFood();
+    });
+    list.appendChild(row);
+  });
+}
+
+function editActual(){
+  const el = $("#foodActual");
+  if(el.querySelector("input")) return;
+  const cur = Math.round(bugetActual());
+  el.innerHTML = '<input class="actual-edit" inputmode="decimal" type="text" value="'+cur+'">';
+  const inp = el.querySelector("input");
+  inp.focus(); inp.select();
+  const commit = ()=>{
+    state.foodActualBase = parseNum(inp.value) + journalSum(); // baza așa încât actual = valoarea tastată
+    save(); renderFood();
+  };
+  inp.addEventListener("blur", commit);
+  inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); inp.blur(); } });
+}
+
+function addJournalEntry(){
+  const date = $("#jrnDate").value || todayKey();
+  const amount = parseNum($("#jrnAmount").value);
+  if(amount<=0){ $("#jrnAmount").focus(); return; }
+  const src = (jrnSrc==="cash") ? "cash" : "card";
+  state.foodJournal = state.foodJournal || [];
+  state.foodJournal.push({ id:uid(), date, amount, src });
+  adjustBalance(src, -amount); // scade din sold
+  $("#jrnAmount").value = "";
+  save();
+  renderFood();
+}
+
+/* ---------------- Jurnal Categorii ---------------- */
+let catJrnSrc = "card";
+function renderCatJournal(){
+  const list = $("#catJrnList");
+  list.innerHTML = "";
+  if(!$("#catJrnDate").value) $("#catJrnDate").value = todayKey();
+  const entries = [...(state.catJournal||[])].sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0));
+  if(!entries.length){
+    list.innerHTML = '<div class="empty">Nicio cheltuială înregistrată.</div>';
+    return;
+  }
+  entries.forEach(e=>{
+    const row = document.createElement("div");
+    row.className = "jrn-row";
+    const src = (e.src||"card")==="cash" ? "cash" : "card";
+    row.innerHTML = `
+      <div class="d">${escapeHtml(fmtJrnDate(e.date))}<span class="jrn-tag ${src}">${src==="cash"?"Cash":"Card"}</span></div>
+      <div class="a">${fmt(e.amount)}<span class="lei">lei</span></div>
+      <button class="del-btn" aria-label="Șterge">×</button>`;
+    $(".del-btn",row).addEventListener("click", ()=>{
+      adjustBalance(e.src, +(+e.amount||0)); // restituie banii în sold
+      state.catJournal = state.catJournal.filter(x=>x!==e);
+      save(); renderCatJournal();
+    });
+    list.appendChild(row);
+  });
+}
+function addCatJournalEntry(){
+  const date = $("#catJrnDate").value || todayKey();
+  const amount = parseNum($("#catJrnAmount").value);
+  if(amount<=0){ $("#catJrnAmount").focus(); return; }
+  const src = (catJrnSrc==="cash") ? "cash" : "card";
+  state.catJournal = state.catJournal || [];
+  state.catJournal.push({ id:uid(), date, amount, src });
+  adjustBalance(src, -amount); // scade din sold
+  $("#catJrnAmount").value = "";
+  save();
+  renderCatJournal();
+}
+
+/* ---------------- Source sheet ---------------- */
+function askSource(name, amount){
+  return new Promise(resolve=>{
+    const ov = $("#srcSheet");
+    $("#srcSheetName").textContent = (name||"") + (amount ? " · "+fmt(amount)+" lei" : "");
+    ov.classList.add("show");
+    ov.setAttribute("aria-hidden","false");
+    const done = (val)=>{
+      ov.classList.remove("show");
+      ov.setAttribute("aria-hidden","true");
+      ov.removeEventListener("click", onClick);
+      resolve(val);
+    };
+    const onClick = (e)=>{
+      if(e.target===ov){ done(null); return; }     // click pe fundal = anulează
+      const btn = e.target.closest("[data-src]");
+      if(!btn) return;
+      done(btn.dataset.src || null);
+    };
+    ov.addEventListener("click", onClick);
+  });
+}
+
+/* ---------------- Navigation ---------------- */
+function show(view){
+  $$(".view").forEach(v=>v.classList.toggle("active", v.id==="view-"+view));
+  $$(".nav-btn").forEach(b=>b.classList.toggle("active", b.dataset.view===view));
+  $("#resetBtn").style.display = view==="dashboard" ? "" : "none";
+  if(view==="dashboard") renderDashboard();
+  if(view==="sume")      renderSume();
+  if(view==="categorii"){ renderCategorii(); renderCatJournal(); }
+  if(view==="food")      renderFood();
+}
+
+/* ---------------- Utils ---------------- */
+function escapeHtml(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function escapeAttr(s){return escapeHtml(s).replace(/'/g,"&#39;");}
+
+/* ---------------- Wire up ---------------- */
+$$(".nav-btn").forEach(b=> b.addEventListener("click", ()=>show(b.dataset.view)));
+
+$("#toggleDone").addEventListener("click", ()=>{ state.hideDone=!state.hideDone; save(); renderDashboard(); });
+
+// selectare buget activ (prev / actual) — exclusiv, salvează + re-randează
+function setFoodMode(mode){ state.foodBudgetMode = mode==="actual"?"actual":"prev"; save(); renderFood(); }
+$("#foodPrevCard").addEventListener("click", ()=> setFoodMode("prev"));
+$("#foodActualCard").addEventListener("click", ()=> setFoodMode("actual"));
+// click pe valoarea actual: editează + selectează actual (oprește bubbling spre card)
+$("#foodActual").addEventListener("click", e=>{ e.stopPropagation(); setFoodMode("actual"); editActual(); });
+$("#jrnAdd").addEventListener("click", addJournalEntry);
+$("#jrnAmount").addEventListener("keydown", e=>{ if(e.key==="Enter") addJournalEntry(); });
+$("#catJrnAdd").addEventListener("click", addCatJournalEntry);
+$("#catJrnAmount").addEventListener("keydown", e=>{ if(e.key==="Enter") addCatJournalEntry(); });
+// fiecare jurnal își are propriul buton de sursă (Card/Cash)
+function wireSrcToggle(container, onPick){
+  const btns = $$(".jrn-src", container);
+  btns.forEach(b=> b.addEventListener("click", ()=>{
+    btns.forEach(x=> x.classList.toggle("on", x===b));
+    onPick(b.dataset.src);
+  }));
+}
+wireSrcToggle($("#view-food .jrn-srctoggle"),     s=> jrnSrc=s);
+wireSrcToggle($("#view-categorii .jrn-srctoggle"), s=> catJrnSrc=s);
+
+$("#inCash").addEventListener("input", e=>{ state.cash=parseNum(e.target.value); updateSumeTotal(); save(); });
+$("#inCard").addEventListener("input", e=>{ state.card=parseNum(e.target.value); updateSumeTotal(); save(); });
+// La accesare, golește câmpul (reset la zero) ca să tastezi direct suma nouă
+$("#inCash").addEventListener("focus", e=>{ e.target.value=""; state.cash=0; updateSumeTotal(); save(); });
+$("#inCard").addEventListener("focus", e=>{ e.target.value=""; state.card=0; updateSumeTotal(); save(); });
+
+$("#resetBtn").addEventListener("click", ()=>{
+  const ok = confirm("Resetezi bugetul?\n\n• Cash și Card → 0\n• Toate cheltuielile → nebifate\n• Food → nebifat\n• Jurnal Food + Jurnal Categorii → golite\n• Buget actual → previzionat\n\n(Categoriile și sumele lor rămân neschimbate.)");
+  if(!ok) return;
+  state.cash = 0;
+  state.card = 0;
+  state.categories.forEach(c=>{ c.done=false; c.src=null; });
+  state.foodDone = false;
+  state.foodJournal = [];
+  state.catJournal = [];
+  state.foodActualBase = foodInfo().amount;
+  state.foodBudgetMode = "prev";   // revine la previzionat (implicit)
+  save();
+  renderDashboard();
+  renderSume();
+  renderFood();
+});
+
+$("#addCat").addEventListener("click", ()=>{
+  // categorie nouă goală, marcată draft → apare la finalul listei
+  state.categories.push({name:"", lei:0, data:0, done:false, _draft:true});
+  save(); renderCategorii();
+  const inputs = $$("#catList .cat-row:last-child input");
+  if(inputs[0]) inputs[0].focus();
+});
+
+$("#saveCat").addEventListener("click", ()=>{
+  // finalizează draftul/drafturile → se sortează la poziția corectă după dată
+  state.categories.forEach(c=>{
+    if(c._draft){
+      if(!c.data) c.data = new Date().getDate(); // dată implicită dacă a fost lăsată goală
+      delete c._draft;
+    }
+  });
+  save(); renderCategorii();
+});
+
+// date subtitle
+(function(){
+  const d = new Date();
+  const months=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+  $("#dateSub").textContent = d.getDate()+" "+months[d.getMonth()]+" "+d.getFullYear();
+})();
+
+renderDashboard();
+</script>
+</body>
+</html>
