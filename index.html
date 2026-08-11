@@ -240,6 +240,17 @@
     font-variant-numeric:tabular-nums;user-select:text;
   }
   .money-input-wrap .unit{font-size:14px;color:var(--txt-dim);font-weight:600}
+  /* rând de ajustare rapidă a soldului (＋ Adaugă / − Scade) */
+  .adj-row{display:flex;gap:8px;align-items:center;margin-top:10px}
+  .adj-row .jrn-amt-wrap{flex:1;min-width:0}
+  .adj-btn{
+    flex:0 0 auto;padding:11px 10px;border-radius:11px;white-space:nowrap;
+    background:rgba(8,11,16,.45);border:1.5px solid var(--glass-brd);
+    font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;
+  }
+  .adj-btn:active{transform:scale(.96)}
+  .adj-btn.plus{color:var(--green);border-color:rgba(47,191,113,.40);background:var(--green-soft)}
+  .adj-btn.minus{color:var(--red);border-color:rgba(255,93,93,.40);background:var(--red-soft)}
   .total-card{
     margin-top:18px;padding:20px;border-radius:20px;
     background:linear-gradient(135deg,rgba(255,122,60,.17),rgba(255,255,255,.03));
@@ -379,6 +390,30 @@
     display:grid;place-items:center;cursor:pointer;transition:.15s;
   }
   .jrn-add-btn:active{transform:scale(.93)}
+  /* ---------- Split (o parte Card, o parte Cash) ---------- */
+  .split-ic{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;
+    stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em}
+  /* în modul split: câmpul unic de sumă e înlocuit de totalul calculat */
+  .jurnal-add:not(.split) .jrn-split,
+  .jurnal-add:not(.split) .jrn-total{display:none}
+  .jurnal-add.split .jrn-amt-wrap.main{display:none}
+  .jrn-split{display:flex;gap:9px;align-items:center}
+  .jrn-splitlbl{flex:0 0 auto;font-size:13px;color:var(--txt-dim);display:grid;place-items:center}
+  .jrn-total{
+    flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:6px;
+    padding:12px;border-radius:12px;background:rgba(8,11,16,.25);
+    border:1.5px dashed var(--glass-brd);font-size:15px;font-weight:700;
+    color:var(--accent);font-variant-numeric:tabular-nums;
+  }
+  .jrn-tag.split{color:var(--accent);background:var(--accent-soft)}
+  /* ---------- Rebalansare (Sume) ---------- */
+  .rebal-dir .jrn-src{display:flex;align-items:center;justify-content:center;gap:5px;font-size:13px;white-space:nowrap}
+  .rebal-arr{color:var(--txt-mute);font-weight:700}
+  .rebal-dir .jrn-src.on .rebal-arr{color:var(--accent)}
+  .rebal-ic{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .rebal-hint{font-size:12.5px;font-weight:600;color:var(--txt-mute);text-align:center;padding:1px 2px}
+  .rebal-hint.err{color:var(--red)}
+  .rebal-hint.ok{color:var(--green)}
   .jrn-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line)}
   .jrn-row:last-child{border-bottom:none}
   .jrn-row .d{font-size:14.5px;font-weight:600;flex:1 1 auto}
@@ -512,6 +547,14 @@
             <input id="inCash" inputmode="decimal" type="text" placeholder="0">
             <span class="unit">lei</span>
           </div>
+          <div class="adj-row">
+            <div class="jrn-amt-wrap">
+              <input class="jrn-amt-in" id="adjCash" inputmode="decimal" type="text" placeholder="Sumă">
+              <span class="jrn-unit">lei</span>
+            </div>
+            <button class="adj-btn plus"  data-adj="cash" data-op="add">＋ Adaugă</button>
+            <button class="adj-btn minus" data-adj="cash" data-op="sub">− Scade</button>
+          </div>
         </div>
         <div class="money-block">
           <div class="money-head">
@@ -523,11 +566,37 @@
             <input id="inCard" inputmode="decimal" type="text" placeholder="0">
             <span class="unit">lei</span>
           </div>
+          <div class="adj-row">
+            <div class="jrn-amt-wrap">
+              <input class="jrn-amt-in" id="adjCard" inputmode="decimal" type="text" placeholder="Sumă">
+              <span class="jrn-unit">lei</span>
+            </div>
+            <button class="adj-btn plus"  data-adj="card" data-op="add">＋ Adaugă</button>
+            <button class="adj-btn minus" data-adj="card" data-op="sub">− Scade</button>
+          </div>
         </div>
       </div>
       <div class="total-card">
         <div class="k">Total sume</div>
         <div class="v" id="sumeTotal">0<span class="lei">lei</span></div>
+      </div>
+
+      <div class="section-title">Rebalansare</div>
+      <div class="card jurnal-add">
+        <div class="jrn-srctoggle rebal-dir" id="rebalToggle">
+          <button class="jrn-src on" data-src="cash"><svg class="coin-stack" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v9a7 2.5 0 0 0 14 0V6"/><path d="M5 9a7 2.5 0 0 0 14 0"/><path d="M5 12a7 2.5 0 0 0 14 0"/></svg> Cash <span class="rebal-arr">→</span> 💳 Card</button>
+          <button class="jrn-src" data-src="card">💳 Card <span class="rebal-arr">→</span> <svg class="coin-stack" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v9a7 2.5 0 0 0 14 0V6"/><path d="M5 9a7 2.5 0 0 0 14 0"/><path d="M5 12a7 2.5 0 0 0 14 0"/></svg> Cash</button>
+        </div>
+        <div class="jrn-inputs">
+          <div class="jrn-amt-wrap">
+            <input class="jrn-amt-in" id="rebalAmount" inputmode="decimal" type="text" placeholder="Sumă de mutat">
+            <span class="jrn-unit">lei</span>
+          </div>
+          <button class="jrn-add-btn" id="rebalDo" aria-label="Mută suma">
+            <svg class="rebal-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h14M14 5l4 4-4 4M20 15H6M10 11l-4 4 4 4"/></svg>
+          </button>
+        </div>
+        <div class="rebal-hint" id="rebalHint"></div>
       </div>
     </section>
 
@@ -538,22 +607,40 @@
         <div>Cheltuială</div><div style="text-align:right">Lei</div><div style="text-align:center">Data</div><div></div>
       </div>
       <div class="card" id="catList"></div>
+      <div class="total-card">
+        <div class="k">Total categorii</div>
+        <div class="v" id="catTotal">0<span class="lei">lei</span></div>
+      </div>
       <button class="add-btn save-btn" id="saveCat" style="display:none">✓ Salvează</button>
       <button class="add-btn" id="addCat">＋ Adaugă categorie</button>
 
       <div class="section-title">Jurnal cheltuieli</div>
-      <div class="card jurnal-add">
+      <div class="card jurnal-add" id="catJrnBox">
         <div class="jrn-srctoggle">
           <button class="jrn-src on" data-src="card">💳 Card</button>
           <button class="jrn-src" data-src="cash"><svg class="coin-stack" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v9a7 2.5 0 0 0 14 0V6"/><path d="M5 9a7 2.5 0 0 0 14 0"/><path d="M5 12a7 2.5 0 0 0 14 0"/></svg> Cash</button>
+          <button class="jrn-src" data-src="split"><svg class="split-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v5m0 0-4.5 4.5M12 9l4.5 4.5"/></svg> Split</button>
         </div>
         <div class="jrn-inputs">
           <input class="jrn-in jrn-date" type="date" id="catJrnDate">
-          <div class="jrn-amt-wrap">
+          <div class="jrn-amt-wrap main">
             <input class="jrn-amt-in" id="catJrnAmount" inputmode="decimal" type="text" placeholder="Sumă">
             <span class="jrn-unit">lei</span>
           </div>
+          <div class="jrn-total"><span id="catJrnTotal">0</span><span class="jrn-unit">lei</span></div>
           <button class="jrn-add-btn" id="catJrnAdd" aria-label="Adaugă">＋</button>
+        </div>
+        <div class="jrn-split">
+          <div class="jrn-amt-wrap">
+            <span class="jrn-splitlbl">💳</span>
+            <input class="jrn-amt-in" id="catJrnSplitCard" inputmode="decimal" type="text" placeholder="Card">
+            <span class="jrn-unit">lei</span>
+          </div>
+          <div class="jrn-amt-wrap">
+            <span class="jrn-splitlbl"><svg class="coin-stack" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v9a7 2.5 0 0 0 14 0V6"/><path d="M5 9a7 2.5 0 0 0 14 0"/><path d="M5 12a7 2.5 0 0 0 14 0"/></svg></span>
+            <input class="jrn-amt-in" id="catJrnSplitCash" inputmode="decimal" type="text" placeholder="Cash">
+            <span class="jrn-unit">lei</span>
+          </div>
         </div>
       </div>
       <div class="card" id="catJrnList"></div>
@@ -581,19 +668,33 @@
         </div>
       </div>
 
-      <div class="section-title">Jurnal</div>
-      <div class="card jurnal-add">
+      <div class="section-title">Jurnal cheltuieli</div>
+      <div class="card jurnal-add" id="foodJrnBox">
         <div class="jrn-srctoggle">
           <button class="jrn-src on" data-src="card">💳 Card</button>
           <button class="jrn-src" data-src="cash"><svg class="coin-stack" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v9a7 2.5 0 0 0 14 0V6"/><path d="M5 9a7 2.5 0 0 0 14 0"/><path d="M5 12a7 2.5 0 0 0 14 0"/></svg> Cash</button>
+          <button class="jrn-src" data-src="split"><svg class="split-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v5m0 0-4.5 4.5M12 9l4.5 4.5"/></svg> Split</button>
         </div>
         <div class="jrn-inputs">
           <input class="jrn-in jrn-date" type="date" id="jrnDate">
-          <div class="jrn-amt-wrap">
+          <div class="jrn-amt-wrap main">
             <input class="jrn-amt-in" id="jrnAmount" inputmode="decimal" type="text" placeholder="Sumă">
             <span class="jrn-unit">lei</span>
           </div>
+          <div class="jrn-total"><span id="jrnTotal">0</span><span class="jrn-unit">lei</span></div>
           <button class="jrn-add-btn" id="jrnAdd" aria-label="Adaugă">＋</button>
+        </div>
+        <div class="jrn-split">
+          <div class="jrn-amt-wrap">
+            <span class="jrn-splitlbl">💳</span>
+            <input class="jrn-amt-in" id="jrnSplitCard" inputmode="decimal" type="text" placeholder="Card">
+            <span class="jrn-unit">lei</span>
+          </div>
+          <div class="jrn-amt-wrap">
+            <span class="jrn-splitlbl"><svg class="coin-stack" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v9a7 2.5 0 0 0 14 0V6"/><path d="M5 9a7 2.5 0 0 0 14 0"/><path d="M5 12a7 2.5 0 0 0 14 0"/></svg></span>
+            <input class="jrn-amt-in" id="jrnSplitCash" inputmode="decimal" type="text" placeholder="Cash">
+            <span class="jrn-unit">lei</span>
+          </div>
         </div>
       </div>
       <div class="card" id="jrnList"></div>
@@ -641,15 +742,17 @@ const RESET_DAY = 19;
 const DEFAULT_CATS = [
   {name:"Chirie",       lei:1050, data:5,  done:false},
   {name:"Intretinere",  lei:300,  data:5,  done:false},
-  {name:"Curent",       lei:250,  data:5,  done:false},
   {name:"Combustibil",  lei:350,  data:5,  done:false},
   {name:"Scoala",       lei:2000, data:5,  done:false},
   {name:"Acrobatii",    lei:300,  data:5,  done:false},
+  {name:"Laptop Lucsi", lei:120,  data:5,  done:false},
   {name:"Internet Digi",lei:40,   data:7,  done:false},
   {name:"SQX",          lei:460,  data:8,  done:false},
   {name:"Ninja Sport",  lei:345,  data:10, done:false},
   {name:"Parkour",      lei:225,  data:10, done:false},
+  {name:"Claude Code",  lei:260,  data:16, done:false},
   {name:"Telefon",      lei:160,  data:20, done:false},
+  {name:"Curent",       lei:590,  data:26, done:false},
   {name:"Spotify",      lei:50,   data:27, done:false},
 ];
 
@@ -695,11 +798,28 @@ function fmtJrnDate(key){
   if(p.length<3 || isNaN(p[2])) return key||"";
   return p[2]+" "+(MONTHS_SHORT[p[1]-1]||"");
 }
+// O intrare de jurnal e fie pe o singură sursă (src "cash"/"card"), fie split:
+// src==="split" și atunci e.card + e.cash dau suma, iar e.amount e totalul lor.
+function entrySplit(e){ return (e.src||"card")==="split"; }
+// cât din intrare apasă pe sursa dată
+function entryBySrc(e, src){
+  if(entrySplit(e)) return (+e[src]||0);
+  return ((e.src||"card")===src) ? (+e.amount||0) : 0;
+}
+// aplică intrarea pe solduri: sign -1 la adăugare, +1 la ștergere (restituire)
+function applyEntry(e, sign){
+  if(entrySplit(e)){
+    adjustBalance("card", sign*(+e.card||0));
+    adjustBalance("cash", sign*(+e.cash||0));
+  }else{
+    adjustBalance(e.src, sign*(+e.amount||0));
+  }
+}
 // Food budgets
 function journalSum(){ return (state.foodJournal||[]).reduce((a,e)=> a + (+e.amount||0), 0); }
-function journalBySrc(src){ return (state.foodJournal||[]).reduce((a,e)=> a + (((e.src||"card")===src)?(+e.amount||0):0), 0); }
+function journalBySrc(src){ return (state.foodJournal||[]).reduce((a,e)=> a + entryBySrc(e,src), 0); }
 // Jurnal Categorii (cheltuieli diverse, scad direct din sursă)
-function catJournalBySrc(src){ return (state.catJournal||[]).reduce((a,e)=> a + (((e.src||"card")===src)?(+e.amount||0):0), 0); }
+function catJournalBySrc(src){ return (state.catJournal||[]).reduce((a,e)=> a + entryBySrc(e,src), 0); }
 // Cheltuieli bifate (plătite) din lista de categorii, pe sursă (folosit doar la migrare)
 function paidCatsBySrc(src){ return state.categories.reduce((a,c)=> a + ((c.done && (c.src||null)===src)?(+c.lei||0):0), 0); }
 // cash/card sunt solduri live — scad direct la fiecare plată/jurnal
@@ -825,10 +945,54 @@ function renderSume(){
   $("#inCash").value = state.cash ? state.cash : "";
   $("#inCard").value = state.card ? state.card : "";
   updateSumeTotal();
+  showRebalHint();
 }
 function updateSumeTotal(){
   const t = (+state.cash||0)+(+state.card||0);
   $("#sumeTotal").innerHTML = fmt(t)+'<span class="lei">lei</span>';
+}
+
+// ＋ Adaugă / − Scade direct pe soldul unei surse (fără calcul manual)
+function adjustSum(src, op){
+  const inp = $(src==="cash" ? "#adjCash" : "#adjCard");
+  const amt = parseNum(inp.value);
+  if(amt<=0){ inp.focus(); return; }
+  adjustBalance(src, op==="sub" ? -amt : amt);
+  inp.value = "";
+  save();
+  renderSume();
+}
+
+/* ---------------- Rebalansare Cash ⇄ Card ---------------- */
+// sursa din care se mută banii; destinația e cealaltă
+let rebalFrom = "cash";
+function rebalTo(){ return rebalFrom==="cash" ? "card" : "cash"; }
+const SRC_LABEL = {cash:"Cash", card:"Card"};
+// mesajul implicit: cât e disponibil în sursa selectată
+function showRebalHint(msg, cls){
+  const el = $("#rebalHint");
+  el.className = "rebal-hint" + (cls ? " "+cls : "");
+  el.textContent = msg || ("Disponibil în "+SRC_LABEL[rebalFrom]+": "+fmt(+state[rebalFrom]||0)+" lei");
+}
+function doRebalance(){
+  const amt = parseNum($("#rebalAmount").value);
+  if(amt<=0){ showRebalHint("Introdu o sumă mai mare decât 0.", "err"); return; }
+  const avail = +state[rebalFrom]||0;
+  // transferul nu poate depăși soldul sursei — ar fi bani inexistenți
+  if(amt>avail){
+    showRebalHint("Nu ai atât în "+SRC_LABEL[rebalFrom]+" (disponibil: "+fmt(avail)+" lei).", "err");
+    return;
+  }
+  const to = rebalTo();
+  state[rebalFrom] = avail - amt;
+  state[to] = (+state[to]||0) + amt;
+  save();
+  $("#rebalAmount").value = "";
+  $("#inCash").value = state.cash ? state.cash : "";
+  $("#inCard").value = state.card ? state.card : "";
+  updateSumeTotal();
+  // Total sume rămâne neschimbat — e doar o mutare între surse
+  showRebalHint("Mutat "+fmt(amt)+" lei din "+SRC_LABEL[rebalFrom]+" în "+SRC_LABEL[to]+".", "ok");
 }
 function parseNum(v){
   v = (v||"").toString().replace(/\s/g,"").replace(",",".");
@@ -850,7 +1014,7 @@ function catRow(c){
     <button class="del-btn" aria-label="Șterge">×</button>`;
   const [nameI,leiI,dayI] = $$("input",row);
   nameI.addEventListener("input", ()=>{ c.name=nameI.value; save(); updateSaveBtn(); });
-  leiI.addEventListener("input", ()=>{ c.lei=parseNum(leiI.value); save(); updateSaveBtn(); });
+  leiI.addEventListener("input", ()=>{ c.lei=parseNum(leiI.value); save(); updateCatTotal(); updateSaveBtn(); });
   leiI.addEventListener("blur", ()=>{ if(!(c._draft && !c.lei)) leiI.value=c.lei; });
   dayI.addEventListener("input", ()=>{ let d=parseInt(dayI.value)||0; d=Math.max(0,Math.min(31,d)); c.data=d; save(); updateSaveBtn(); });
   dayI.addEventListener("blur", ()=>{ if(!(c._draft && !c.data)) dayI.value=c.data; });
@@ -872,8 +1036,14 @@ function renderCategorii(){
     [...saved].sort((a,b)=> a.data - b.data).concat(drafts)
       .forEach(c=> list.appendChild(catRow(c)));
   }
+  updateCatTotal();
   // butonul Salvează apare doar cât timp există o categorie nouă needitată
   updateSaveBtn();
+}
+// suma coloanei Lei (draftul incomplet contribuie cu 0)
+function updateCatTotal(){
+  const t = state.categories.reduce((a,c)=> a + (+c.lei||0), 0);
+  $("#catTotal").innerHTML = fmt(t)+'<span class="lei">lei</span>';
 }
 // o categorie nouă e completă doar cu nume, sumă > 0 și zi validă
 function draftComplete(c){ return (c.name||"").trim()!=="" && (+c.lei||0)>0 && (+c.data||0)>=1; }
@@ -939,18 +1109,28 @@ function renderJournal(){
   entries.forEach(e=>{
     const row = document.createElement("div");
     row.className = "jrn-row";
-    const src = (e.src||"card")==="cash" ? "cash" : "card";
     row.innerHTML = `
-      <div class="d">${escapeHtml(fmtJrnDate(e.date))}<span class="jrn-tag ${src}">${src==="cash"?"Cash":"Card"}</span></div>
+      <div class="d">${escapeHtml(fmtJrnDate(e.date))}${jrnTagsHtml(e)}</div>
       <div class="a">${fmt(e.amount)}<span class="lei">lei</span></div>
       <button class="del-btn" aria-label="Șterge">×</button>`;
     $(".del-btn",row).addEventListener("click", ()=>{
-      adjustBalance(e.src, +(+e.amount||0)); // restituie banii în sold
+      applyEntry(e, +1); // restituie banii în sold (ambele surse la split)
       state.foodJournal = state.foodJournal.filter(x=>x!==e);
       save(); renderFood();
     });
     list.appendChild(row);
   });
+}
+// etichetele de sursă ale unei intrări; la split arată cât e pe fiecare
+function jrnTagsHtml(e){
+  if(entrySplit(e)){
+    // partea rămasă pe 0 nu se afișează (split completat doar pe o sursă)
+    const c = +e.card||0, h = +e.cash||0;
+    return (c ? '<span class="jrn-tag card">Card '+fmt(c)+'</span>' : '')
+         + (h ? '<span class="jrn-tag cash">Cash '+fmt(h)+'</span>' : '');
+  }
+  const src = (e.src||"card")==="cash" ? "cash" : "card";
+  return '<span class="jrn-tag '+src+'">'+(src==="cash"?"Cash":"Card")+'</span>';
 }
 
 function editActual(){
@@ -968,15 +1148,50 @@ function editActual(){
   inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); inp.blur(); } });
 }
 
+/* --------- Câmpurile comune ale celor două jurnale --------- */
+const FOOD_JRN = {box:"#foodJrnBox", date:"#jrnDate",    amount:"#jrnAmount",
+                  splitCard:"#jrnSplitCard",    splitCash:"#jrnSplitCash",    total:"#jrnTotal"};
+const CAT_JRN  = {box:"#catJrnBox",  date:"#catJrnDate", amount:"#catJrnAmount",
+                  splitCard:"#catJrnSplitCard", splitCash:"#catJrnSplitCash", total:"#catJrnTotal"};
+
+// citește câmpurile și construiește intrarea; null dacă suma nu e validă
+function buildJrnEntry(mode, ids){
+  const date = $(ids.date).value || todayKey();
+  if(mode==="split"){
+    const card = parseNum($(ids.splitCard).value);
+    const cash = parseNum($(ids.splitCash).value);
+    const amount = card + cash;
+    // e suficient ca una din cele două părți să fie completată
+    if(amount<=0){ $(ids.splitCard).focus(); return null; }
+    return { id:uid(), date, amount, src:"split", card, cash };
+  }
+  const amount = parseNum($(ids.amount).value);
+  if(amount<=0){ $(ids.amount).focus(); return null; }
+  return { id:uid(), date, amount, src:(mode==="cash" ? "cash" : "card") };
+}
+function clearJrnInputs(ids){
+  $(ids.amount).value = "";
+  $(ids.splitCard).value = "";
+  $(ids.splitCash).value = "";
+  updateJrnTotal(ids);
+}
+// modul split arată două câmpuri (Card + Cash) în loc de câmpul unic de sumă
+function setJrnMode(ids, mode){
+  $(ids.box).classList.toggle("split", mode==="split");
+  updateJrnTotal(ids);
+}
+function updateJrnTotal(ids){
+  const t = parseNum($(ids.splitCard).value) + parseNum($(ids.splitCash).value);
+  $(ids.total).textContent = fmt(t);
+}
+
 function addJournalEntry(){
-  const date = $("#jrnDate").value || todayKey();
-  const amount = parseNum($("#jrnAmount").value);
-  if(amount<=0){ $("#jrnAmount").focus(); return; }
-  const src = (jrnSrc==="cash") ? "cash" : "card";
+  const e = buildJrnEntry(jrnSrc, FOOD_JRN);
+  if(!e) return;
   state.foodJournal = state.foodJournal || [];
-  state.foodJournal.push({ id:uid(), date, amount, src });
-  adjustBalance(src, -amount); // scade din sold
-  $("#jrnAmount").value = "";
+  state.foodJournal.push(e);
+  applyEntry(e, -1); // scade din sold
+  clearJrnInputs(FOOD_JRN);
   save();
   renderFood();
 }
@@ -995,13 +1210,12 @@ function renderCatJournal(){
   entries.forEach(e=>{
     const row = document.createElement("div");
     row.className = "jrn-row";
-    const src = (e.src||"card")==="cash" ? "cash" : "card";
     row.innerHTML = `
-      <div class="d">${escapeHtml(fmtJrnDate(e.date))}<span class="jrn-tag ${src}">${src==="cash"?"Cash":"Card"}</span></div>
+      <div class="d">${escapeHtml(fmtJrnDate(e.date))}${jrnTagsHtml(e)}</div>
       <div class="a">${fmt(e.amount)}<span class="lei">lei</span></div>
       <button class="del-btn" aria-label="Șterge">×</button>`;
     $(".del-btn",row).addEventListener("click", ()=>{
-      adjustBalance(e.src, +(+e.amount||0)); // restituie banii în sold
+      applyEntry(e, +1); // restituie banii în sold (ambele surse la split)
       state.catJournal = state.catJournal.filter(x=>x!==e);
       save(); renderCatJournal();
     });
@@ -1009,14 +1223,12 @@ function renderCatJournal(){
   });
 }
 function addCatJournalEntry(){
-  const date = $("#catJrnDate").value || todayKey();
-  const amount = parseNum($("#catJrnAmount").value);
-  if(amount<=0){ $("#catJrnAmount").focus(); return; }
-  const src = (catJrnSrc==="cash") ? "cash" : "card";
+  const e = buildJrnEntry(catJrnSrc, CAT_JRN);
+  if(!e) return;
   state.catJournal = state.catJournal || [];
-  state.catJournal.push({ id:uid(), date, amount, src });
-  adjustBalance(src, -amount); // scade din sold
-  $("#catJrnAmount").value = "";
+  state.catJournal.push(e);
+  applyEntry(e, -1); // scade din sold
+  clearJrnInputs(CAT_JRN);
   save();
   renderCatJournal();
 }
@@ -1082,8 +1294,23 @@ function wireSrcToggle(container, onPick){
     onPick(b.dataset.src);
   }));
 }
-wireSrcToggle($("#view-food .jrn-srctoggle"),     s=> jrnSrc=s);
-wireSrcToggle($("#view-categorii .jrn-srctoggle"), s=> catJrnSrc=s);
+wireSrcToggle($("#view-food .jrn-srctoggle"),      s=>{ jrnSrc=s;    setJrnMode(FOOD_JRN, s); });
+wireSrcToggle($("#view-categorii .jrn-srctoggle"), s=>{ catJrnSrc=s; setJrnMode(CAT_JRN,  s); });
+// câmpurile de split: actualizează totalul afișat și acceptă Enter ca la câmpul unic
+[[FOOD_JRN, addJournalEntry], [CAT_JRN, addCatJournalEntry]].forEach(([ids, add])=>{
+  [ids.splitCard, ids.splitCash].forEach(sel=>{
+    $(sel).addEventListener("input", ()=> updateJrnTotal(ids));
+    $(sel).addEventListener("keydown", e=>{ if(e.key==="Enter") add(); });
+  });
+});
+// ＋ Adaugă / − Scade sub fiecare sold
+$$(".adj-btn").forEach(b=> b.addEventListener("click", ()=> adjustSum(b.dataset.adj, b.dataset.op)));
+$("#adjCash").addEventListener("keydown", e=>{ if(e.key==="Enter") adjustSum("cash","add"); });
+$("#adjCard").addEventListener("keydown", e=>{ if(e.key==="Enter") adjustSum("card","add"); });
+// Rebalansare: butoanele aleg sursa din care se mută banii
+wireSrcToggle($("#rebalToggle"), s=>{ rebalFrom=s; showRebalHint(); });
+$("#rebalDo").addEventListener("click", doRebalance);
+$("#rebalAmount").addEventListener("keydown", e=>{ if(e.key==="Enter") doRebalance(); });
 
 $("#inCash").addEventListener("input", e=>{ state.cash=parseNum(e.target.value); updateSumeTotal(); save(); });
 $("#inCard").addEventListener("input", e=>{ state.card=parseNum(e.target.value); updateSumeTotal(); save(); });
