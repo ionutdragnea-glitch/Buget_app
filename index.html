@@ -419,6 +419,61 @@
   .jrn-row .d{font-size:14.5px;font-weight:600;flex:1 1 auto}
   .jrn-row .a{font-size:15px;font-weight:700;color:var(--accent);white-space:nowrap}
   .jrn-row .a .lei{font-size:11px;color:var(--txt-dim);font-weight:600;margin-left:3px}
+  /* ---------- Ninja ---------- */
+  /* Data plății abonamentului — un rând simplu cu label + input dată */
+  .ninja-pay{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px}
+  .ninja-pay .t{font-size:15.5px;font-weight:700}
+  .ninja-pay .d{font-size:12px;color:var(--txt-dim);margin-top:2px}
+  .ninja-pay input{flex:0 0 auto}
+  .ninja-pay + .ninja-pay{margin-top:10px}
+  .ninja-pay .jrn-amt-wrap{flex:0 0 auto;width:142px}
+  /* Calendar antrenamente */
+  .cal{padding:14px}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+  .cal-title{font-size:15.5px;font-weight:700;text-transform:capitalize;letter-spacing:-.2px}
+  .cal-nav{
+    width:34px;height:34px;flex:0 0 auto;border-radius:11px;
+    border:1.5px solid var(--glass-brd);background:var(--glass-soft);
+    color:var(--txt-dim);font-size:17px;font-weight:700;font-family:inherit;
+    display:grid;place-items:center;cursor:pointer;transition:.15s;
+  }
+  .cal-nav:active{transform:scale(.94);color:var(--accent)}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .cal-wd{
+    text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.6px;
+    text-transform:uppercase;color:var(--txt-mute);padding-bottom:4px;
+  }
+  .cal-day{
+    aspect-ratio:1;border-radius:12px;border:1.5px solid transparent;
+    background:rgba(8,11,16,.42);color:var(--txt);
+    font-size:14.5px;font-weight:600;font-family:inherit;font-variant-numeric:tabular-nums;
+    display:grid;place-items:center;cursor:pointer;transition:.15s;position:relative;
+  }
+  .cal-day:active{transform:scale(.92)}
+  .cal-day.pad{background:none;cursor:default;pointer-events:none}
+  .cal-day.today{border-color:rgba(255,255,255,.24);color:var(--accent)}
+  /* zi cu antrenament bifat */
+  .cal-day.on{
+    background:linear-gradient(135deg,var(--accent),#ff4d6d);
+    border-color:rgba(255,255,255,.18);color:#fff;font-weight:800;
+    box-shadow:0 5px 16px -5px rgba(255,90,80,.65);
+  }
+  /* punct albastru = ziua plății abonamentului */
+  .cal-day.pay::after{
+    content:"";position:absolute;bottom:4px;left:50%;transform:translateX(-50%);
+    width:5px;height:5px;border-radius:50%;background:var(--blue);
+  }
+  .cal-day.on.pay::after{background:#fff}
+  .cal-hint{font-size:12px;color:var(--txt-mute);text-align:center;margin-top:12px;line-height:1.5}
+  .cal-hint .dot{display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:var(--blue);vertical-align:1px;margin:0 2px}
+  /* numărul de ordine al antrenamentului în tabel */
+  .ninja-idx{
+    width:27px;height:27px;flex:0 0 auto;border-radius:9px;
+    background:var(--accent-soft);color:var(--accent);
+    font-size:12px;font-weight:800;display:grid;place-items:center;
+    font-variant-numeric:tabular-nums;
+  }
   /* ---------- Bottom nav ---------- */
   nav{
     flex:0 0 auto;
@@ -699,6 +754,48 @@
       </div>
       <div class="card" id="jrnList"></div>
     </section>
+
+    <!-- NINJA -->
+    <section class="view" id="view-ninja">
+      <div class="section-title">Antrenamente</div>
+      <div class="food-hero">
+        <div class="big" id="ninjaKpi">0</div>
+        <div class="cap">Antrenamente efectuate</div>
+      </div>
+
+      <div class="section-title">Data plății</div>
+      <div class="card ninja-pay">
+        <div>
+          <div class="t">Abonament</div>
+          <div class="d" id="ninjaPaySub">Neplătit</div>
+        </div>
+        <input class="jrn-in jrn-date" type="date" id="ninjaPayDate">
+      </div>
+      <div class="card ninja-pay">
+        <div>
+          <div class="t">Suma plătită</div>
+          <div class="d" id="ninjaSumSub">Cost abonament</div>
+        </div>
+        <div class="jrn-amt-wrap">
+          <input class="jrn-amt-in" id="ninjaPayAmount" inputmode="decimal" type="text" placeholder="0">
+          <span class="jrn-unit">lei</span>
+        </div>
+      </div>
+
+      <div class="section-title">Calendar antrenamente</div>
+      <div class="card cal">
+        <div class="cal-head">
+          <button class="cal-nav" id="ninjaPrev" aria-label="Luna anterioară">‹</button>
+          <div class="cal-title" id="ninjaCalTitle"></div>
+          <button class="cal-nav" id="ninjaNext" aria-label="Luna următoare">›</button>
+        </div>
+        <div class="cal-grid" id="ninjaCal"></div>
+        <div class="cal-hint">Apasă o zi ca să adaugi sau să scoți un antrenament.<br><span class="dot"></span> ziua plății abonamentului</div>
+      </div>
+
+      <div class="section-title" id="ninjaListTitle">Antrenamente efectuate</div>
+      <div class="card" id="ninjaList"></div>
+    </section>
   </main>
 
   <nav>
@@ -717,6 +814,10 @@
     <button class="nav-btn" data-view="food">
       <svg viewBox="0 0 24 24"><path d="M5 3v7a3 3 0 0 0 6 0V3M8 3v18M19 3c-1.5 0-3 1.5-3 5s1.5 4 3 4v9"/></svg>
       Food
+    </button>
+    <button class="nav-btn" data-view="ninja">
+      <svg viewBox="0 0 24 24"><path d="M12 2.5l2.6 6.9 6.9 2.6-6.9 2.6L12 21.5l-2.6-6.9L2.5 12l6.9-2.6z"/><circle cx="12" cy="12" r="1.7"/></svg>
+      Ninja
     </button>
   </nav>
 
@@ -762,6 +863,11 @@ let state = load();
 if(!Array.isArray(state.foodJournal)) state.foodJournal = [];
 if(!Array.isArray(state.catJournal)) state.catJournal = [];
 if(state.foodBudgetMode!=="actual" && state.foodBudgetMode!=="prev") state.foodBudgetMode = "prev";
+// Ninja: data plății abonamentului + zilele de antrenament (chei YYYY-MM-DD)
+if(!state.ninja || typeof state.ninja!=="object") state.ninja = {payDate:null, payAmount:0, trainings:[]};
+if(!Array.isArray(state.ninja.trainings)) state.ninja.trainings = [];
+if(typeof state.ninja.payDate!=="string" || !state.ninja.payDate) state.ninja.payDate = null;
+if(typeof state.ninja.payAmount!=="number" || isNaN(state.ninja.payAmount)) state.ninja.payAmount = 0;
 // conversie unică la „solduri live": scade din cash/card tot ce era cheltuit deja
 if(!state.liveBalances){
   state.cash = (+state.cash||0) - journalBySrc("cash") - catJournalBySrc("cash") - paidCatsBySrc("cash");
@@ -778,7 +884,7 @@ function load(){
       if(s && Array.isArray(s.categories)) return s;
     }
   }catch(e){}
-  return { cash:0, card:0, categories:structuredClone(DEFAULT_CATS), foodDone:false, hideDone:false, foodJournal:[], catJournal:[], foodActualBase:null, foodBudgetMode:"prev", liveBalances:true };
+  return { cash:0, card:0, categories:structuredClone(DEFAULT_CATS), foodDone:false, hideDone:false, foodJournal:[], catJournal:[], foodActualBase:null, foodBudgetMode:"prev", liveBalances:true, ninja:{payDate:null, payAmount:0, trainings:[]} };
 }
 function save(){
   try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
@@ -791,7 +897,16 @@ const fmt = n => Math.round(n).toLocaleString("ro-RO");
 function uid(){ return Math.random().toString(36).slice(2,9); }
 
 const MONTHS_SHORT=["ian","feb","mar","apr","mai","iun","iul","aug","sep","oct","noi","dec"];
+const MONTHS_LONG=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+// zilele săptămânii indexate ca getDay() (0 = duminică)
+const DAYS_LONG=["duminică","luni","marți","miercuri","joi","vineri","sâmbătă"];
+// capul de calendar începe cu luni
+const CAL_WD=["Lu","Ma","Mi","Jo","Vi","Sâ","Du"];
 function dayKey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function keyToDate(key){
+  const p = (key||"").split("-").map(Number);
+  return new Date(p[0], (p[1]||1)-1, p[2]||1);
+}
 function todayKey(){ return dayKey(new Date()); }
 function fmtJrnDate(key){
   const p = (key||"").split("-").map(Number);
@@ -1233,6 +1348,113 @@ function addCatJournalEntry(){
   renderCatJournal();
 }
 
+/* ---------------- Ninja (abonament + antrenamente) ---------------- */
+// luna afișată în calendar — doar stare de UI, nu se salvează
+let ninjaMonth = null;
+function ninjaTrainings(){ return state.ninja.trainings || (state.ninja.trainings = []); }
+// zilele de antrenament, sortate crescător (ordinea în care s-au efectuat)
+function ninjaSorted(){ return [...ninjaTrainings()].sort(); }
+// bifează/debifează o zi de antrenament
+function toggleTraining(key){
+  const t = ninjaTrainings();
+  const i = t.indexOf(key);
+  if(i>=0) t.splice(i,1); else t.push(key);
+  save(); renderNinja();
+}
+
+function renderNinja(){
+  if(!ninjaMonth){ const d = new Date(); ninjaMonth = {y:d.getFullYear(), m:d.getMonth()}; }
+  const all = ninjaSorted();
+  const pay = state.ninja.payDate;
+
+  // ---- KPI ----
+  $("#ninjaKpi").textContent = all.length;
+
+  // ---- Data plății + suma plătită ----
+  $("#ninjaPayDate").value = pay || "";
+  $("#ninjaPaySub").textContent = pay
+    ? "Plătit pe "+keyToDate(pay).getDate()+" "+MONTHS_LONG[keyToDate(pay).getMonth()]
+    : "Neplătit";
+  $("#ninjaPayAmount").value = state.ninja.payAmount ? state.ninja.payAmount : "";
+  updateNinjaSumSub();
+
+  renderNinjaCal();
+  renderNinjaList();
+}
+
+// cât a costat, în medie, un antrenament din abonamentul plătit
+function updateNinjaSumSub(){
+  const amt = +state.ninja.payAmount||0;
+  const n = ninjaTrainings().length;
+  $("#ninjaSumSub").textContent = (amt>0 && n>0)
+    ? fmt(amt/n)+" lei/antrenament"
+    : "Cost abonament";
+}
+
+function renderNinjaCal(){
+  $("#ninjaCalTitle").textContent = MONTHS_LONG[ninjaMonth.m]+" "+ninjaMonth.y;
+  const grid = $("#ninjaCal");
+  grid.innerHTML = "";
+  CAL_WD.forEach(w=>{
+    const el = document.createElement("div");
+    el.className = "cal-wd";
+    el.textContent = w;
+    grid.appendChild(el);
+  });
+  const first = new Date(ninjaMonth.y, ninjaMonth.m, 1);
+  const shift = (first.getDay()+6)%7;               // câte celule goale până la prima zi (luni = 0)
+  const days  = new Date(ninjaMonth.y, ninjaMonth.m+1, 0).getDate();
+  for(let i=0;i<shift;i++){
+    const pad = document.createElement("div");
+    pad.className = "cal-day pad";
+    grid.appendChild(pad);
+  }
+  const set = new Set(ninjaTrainings());
+  const tk  = todayKey();
+  for(let d=1;d<=days;d++){
+    const key = dayKey(new Date(ninjaMonth.y, ninjaMonth.m, d));
+    const btn = document.createElement("button");
+    btn.className = "cal-day"
+      + (set.has(key) ? " on" : "")
+      + (key===tk ? " today" : "")
+      + (key===state.ninja.payDate ? " pay" : "");
+    btn.textContent = d;
+    btn.setAttribute("aria-pressed", String(set.has(key)));
+    btn.addEventListener("click", ()=> toggleTraining(key));
+    grid.appendChild(btn);
+  }
+}
+
+function renderNinjaList(){
+  const list = $("#ninjaList");
+  list.innerHTML = "";
+  const asc = ninjaSorted();
+  $("#ninjaListTitle").textContent = "Antrenamente efectuate ("+asc.length+")";
+  if(!asc.length){
+    list.innerHTML = '<div class="empty">Niciun antrenament. Alege o zi din calendar.</div>';
+    return;
+  }
+  // numerotate cronologic, dar afișate cu cel mai recent primul
+  asc.map((key,i)=>({key, nr:i+1})).reverse().forEach(({key,nr})=>{
+    const d = keyToDate(key);
+    const label = DAYS_LONG[d.getDay()]+", "+d.getDate()+" "+MONTHS_LONG[d.getMonth()];
+    const row = document.createElement("div");
+    row.className = "jrn-row";
+    row.innerHTML = `
+      <div class="ninja-idx">${nr}</div>
+      <div class="d">${escapeHtml(label)}</div>
+      <button class="del-btn" aria-label="Șterge">×</button>`;
+    $(".del-btn",row).addEventListener("click", ()=> toggleTraining(key));
+    list.appendChild(row);
+  });
+}
+
+function shiftNinjaMonth(delta){
+  const d = new Date(ninjaMonth.y, ninjaMonth.m+delta, 1);
+  ninjaMonth = {y:d.getFullYear(), m:d.getMonth()};
+  renderNinja();
+}
+
 /* ---------------- Source sheet ---------------- */
 function askSource(name, amount){
   return new Promise(resolve=>{
@@ -1265,6 +1487,7 @@ function show(view){
   if(view==="sume")      renderSume();
   if(view==="categorii"){ renderCategorii(); renderCatJournal(); }
   if(view==="food")      renderFood();
+  if(view==="ninja")     renderNinja();
 }
 
 /* ---------------- Utils ---------------- */
@@ -1303,6 +1526,23 @@ wireSrcToggle($("#view-categorii .jrn-srctoggle"), s=>{ catJrnSrc=s; setJrnMode(
     $(sel).addEventListener("keydown", e=>{ if(e.key==="Enter") add(); });
   });
 });
+// Ninja: data plății + navigarea prin luni
+$("#ninjaPayDate").addEventListener("change", e=>{
+  state.ninja.payDate = e.target.value || null;
+  // sari cu calendarul pe luna plății, ca să vezi imediat contextul
+  if(state.ninja.payDate){
+    const d = keyToDate(state.ninja.payDate);
+    ninjaMonth = {y:d.getFullYear(), m:d.getMonth()};
+  }
+  save(); renderNinja();
+});
+// suma nu re-randează tot (ar rescrie câmpul în timpul tastării) — doar salvează + actualizează subtitlul
+$("#ninjaPayAmount").addEventListener("input", e=>{
+  state.ninja.payAmount = parseNum(e.target.value);
+  save(); updateNinjaSumSub();
+});
+$("#ninjaPrev").addEventListener("click", ()=> shiftNinjaMonth(-1));
+$("#ninjaNext").addEventListener("click", ()=> shiftNinjaMonth(+1));
 // ＋ Adaugă / − Scade sub fiecare sold
 $$(".adj-btn").forEach(b=> b.addEventListener("click", ()=> adjustSum(b.dataset.adj, b.dataset.op)));
 $("#adjCash").addEventListener("keydown", e=>{ if(e.key==="Enter") adjustSum("cash","add"); });
@@ -1357,9 +1597,13 @@ $("#saveCat").addEventListener("click", ()=>{
 // date subtitle
 (function(){
   const d = new Date();
-  const months=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
-  $("#dateSub").textContent = d.getDate()+" "+months[d.getMonth()]+" "+d.getFullYear();
+  $("#dateSub").textContent = d.getDate()+" "+MONTHS_LONG[d.getMonth()]+" "+d.getFullYear();
 })();
+
+// service worker: aplicația rămâne funcțională offline după prima deschidere
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=> navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
 
 renderDashboard();
 </script>
