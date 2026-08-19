@@ -840,21 +840,16 @@
 const FOOD_PER_DAY = 180;
 const RESET_DAY = 19;
 
+/* Categorii de pornire (doar la prima instalare, cand localStorage e gol).
+   Valori generice — se editeaza din ecranul Categorii. */
 const DEFAULT_CATS = [
-  {name:"Chirie",       lei:1050, data:5,  done:false},
-  {name:"Intretinere",  lei:300,  data:5,  done:false},
-  {name:"Combustibil",  lei:350,  data:5,  done:false},
-  {name:"Scoala",       lei:2000, data:5,  done:false},
-  {name:"Acrobatii",    lei:300,  data:5,  done:false},
-  {name:"Laptop Lucsi", lei:120,  data:5,  done:false},
-  {name:"Internet Digi",lei:40,   data:7,  done:false},
-  {name:"SQX",          lei:460,  data:8,  done:false},
-  {name:"Ninja Sport",  lei:345,  data:10, done:false},
-  {name:"Parkour",      lei:225,  data:10, done:false},
-  {name:"Claude Code",  lei:260,  data:16, done:false},
-  {name:"Telefon",      lei:160,  data:20, done:false},
-  {name:"Curent",       lei:590,  data:26, done:false},
-  {name:"Spotify",      lei:50,   data:27, done:false},
+  {name:"Chirie",       lei:0, data:5,  done:false},
+  {name:"Intretinere",  lei:0, data:5,  done:false},
+  {name:"Combustibil",  lei:0, data:5,  done:false},
+  {name:"Internet",     lei:0, data:7,  done:false},
+  {name:"Telefon",      lei:0, data:20, done:false},
+  {name:"Curent",       lei:0, data:26, done:false},
+  {name:"Abonamente",   lei:0, data:27, done:false},
 ];
 
 const KEY = "buget.state.v2";
